@@ -1,0 +1,24 @@
+#
+# Sample fwmacro rules file
+#
+
+group search_engines:
+    google.com
+    yahoo.com
+
+ruleset search_engines:
+    out permit tcp any all search_engines 80
+
+interface lo:
+    # Permit anything to loopback interfice
+    local in permit ip any any
+    local out permit ip any any
+
+interface eth0:
+    local out permit tcp any all search_engines 80
+    ruleset search_engines
+    local out permit ip any any
+    local in deny ip any any log
+    # The rest is denied and logged
+    in deny ip any any log
+    out deny ip any any log

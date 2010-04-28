@@ -1,0 +1,111 @@
+FWMPP(8)
+=======
+
+
+NAME
+----
+fwmpp - preprocesses simplified firewall rule for fwmc
+
+
+SYNOPSIS
+--------
+*fwmpp* ['OPTIONS'] FILE
+
+
+DESCRIPTION
+-----------
+The fwmpp(8) command preprocesses simplified rules to be used 
+with fwmc, which compiles iptables/ip6tables rules from 
+/etc/fwmacro/chains4 and /etc/fwmacro/chains6 to input files for
+iptables-restore and ip6tables-restore (ipv4.rules and ipv6.rules).
+
+Simplified rules may define groups, rulesets and rules to be applied
+on a specific interface.
+
+
+OPTIONS
+-------
+
+*-h, --help*::
+    show help message and exit
+
+*-V, --version*::
+    show version and exit
+
+*--verbose*::
+    verbose messages
+
+*--ipv4-chains=DIRECTORY*::
+    directory with iptables chains (default: /etc/fwmacro/chains4)
+
+*--ipv6-chains=DIRECTORY*::
+    directory with ip6tables chains (default: /etc/fwmacro/chains6)
+
+*--logtag=LOGTAG*::
+    log tag template (default: '%(iface)s-%(chainname)s-%(lineno)s')
+
+
+EXIT STATUS
+-----------
+*0*::
+    Success
+
+*1*::
+    Failure
+
+
+RULE SYNTAX
+-----------
+
+@RULE SYNTAX@
+
+
+EXAMPLE
+-------
+
+    group search_engines:
+        google.com
+        yahoo.com
+    
+    ruleset search_engines:
+        out permit tcp any all search_engines 80
+    
+    interface lo:
+        # Permit anything to loopback interfice
+        local in permit ip any any
+        local out permit ip any any
+    
+    interface eth0:
+        local out permit tcp any all search_engines 80
+        ruleset search_engines
+        local out permit ip any any
+        local in deny ip any any log
+        # The rest is denied and logged
+        in deny ip any any log
+        out deny ip any any log
+
+
+BUGS
+----
+See the project page: http://fwmacro.googlecode.com/
+
+
+SEE ALSO
+--------
+fwmc(8)
+
+
+AUTHOR
+------
+Written by Kees Bos <k.bos@zx.nl>
+
+
+RESOURCES
+---------
+Web site and code: <http://code.google.com/p/fwmacro/>
+
+
+COPYING
+-------
+Copyright \(C) 2010 ZX. Free use of this software is granted 
+under the terms of the MIT License.

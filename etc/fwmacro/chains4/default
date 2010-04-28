@@ -1,0 +1,2 @@
+-A 10stateful -mstate --state ESTABLISHED,RELATED -j ACCEPT
+-A 10stateful -mstate --state INVALID -j DROP

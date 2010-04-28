@@ -1,0 +1,3 @@
+#!/usr/bin/env python
+import fwmacro
+fwmacro.fwmpp()

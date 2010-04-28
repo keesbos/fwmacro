@@ -1,0 +1,39 @@
+#!/usr/bin/make -f
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+PACKAGE = python-fwmacro
+
+
+configure:
+	dh_testdir
+
+build:
+	dh_testdir
+	dh_installman
+	touch build-stamp
+
+clean:
+	dh_testdir
+	dh_testroot
+	dh_clean
+
+install: build install-stamp
+install-stamp:
+	dh_testdir
+	dh_testroot
+	dh_installdirs
+
+	dh_install
+	touch install-stamp
+
+binary: build install
+	dh_testdir
+	dh_testroot
+	dh_fixperms
+	dh_installdirs
+	dh_install
+	dh_installdeb
+	dh_gencontrol
+	dh_builddeb

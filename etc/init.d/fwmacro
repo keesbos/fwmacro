@@ -1,0 +1,57 @@
+#!/bin/sh
+#
+# Author: Kees Bos <k.bos@zx.nl>
+#
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
+DESC="fwmacro firewall rules"
+SCRIPTNAME=/etc/init.d/fwmacro
+ETCDIR=/etc/fwmacro
+IPv4RULES=$ETCDIR/ipv4.rules
+IPv6RULES=$ETCDIR/ipv6.rules
+IPv4STOPRULES=$ETCDIR/ipv4stop.rules
+IPv6STOPRULES=$ETCDIR/ipv6stop.rules
+
+# Exit if the fwmacro is not installed
+[ -d /etc/fwmacro ] || exit 0
+# Exit if iptables is not installed
+[ -x /sbin/iptables ] || exit 0
+
+case "$1" in
+	start|restart)
+		if [ -f $IPv4RULES ] ; then
+			iptables-restore $IPv4RULES
+		else
+			echo "File missing: $IPv4RULES" >&2
+			exit 1
+		fi
+		if [ -x /sbin/ip6tables ] ; then
+			if [ -f $IPv6RULES ] ; then
+				iptables-restore $IPv6RULES
+			else
+				echo "File missing: $IPv6RULES" >&2
+				exit 1
+			fi
+		fi
+		;;
+	stop)
+		if [ -f $IPv4STOPRULES ] ; then
+			iptables-restore $IPv4STOPRULES
+		else
+			echo "File missing: $IPv4STOPRULES" >&2
+			exit 1
+		fi
+		if [ -x /sbin/ip6tables ] ; then
+			if [ -f $IPv6STOPRULES ] ; then
+				iptables-restore $IPv6STOPRULES
+			else
+				echo "File missing: $IPv6STOPRULES" >&2
+				exit 1
+			fi
+		fi
+		;;
+	*)
+		echo "Usage: $0 {start|stop|restart}" >&2
+		exit 3
+		;;
+esac
+exit 0

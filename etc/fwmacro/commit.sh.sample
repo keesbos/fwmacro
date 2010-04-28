@@ -1,0 +1,25 @@
+#!/bin/sh
+
+if [ ! -f fw.rules ] ; then
+	echo "Add fw.rules first" >&2
+	exit 1
+fi
+
+if [ ! -d .git ] ; then
+	cat <<EOD >.gitignore
+.compile
+.preprocess
+chains4/fwm-ifs
+chains6/fwm-ifs
+ipv4.rules
+ipv6.rules
+README
+EOD
+	git init
+	git add .gitignore
+	git add Makefile chains4 chains6 fw.rules ipv4stop.rules ipv6stop.rules *.sample
+	if [ -f commit.sh ] ; then
+		git add commit.sh
+	fi
+fi
+git commit -a

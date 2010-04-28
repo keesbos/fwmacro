@@ -1,0 +1,13 @@
+Source: python-fwmacro
+Section: python
+Priority: optional
+Homepage: http://fwmacro.googlecode.com/
+Standards-Version: 3.7.3
+XS-Python-Version: all
+
+Package: python-fwmacro
+Architecture: all
+Pre-Depends: python-setuptools
+Description: firewall macro rules preprocessor/compiler
+ fwmacro is a library for generating iptables/ip6tables rules and to
+ generate input files for iptables-restore and ip6tables-restore.

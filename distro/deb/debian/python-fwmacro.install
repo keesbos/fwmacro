@@ -1,0 +1,13 @@
+../../etc/fwmacro/chains4/default etc/fwmacro/chains4
+../../etc/fwmacro/chains6/default etc/fwmacro/chains6
+../../etc/fwmacro/ipv4stop.rules etc/fwmacro
+../../etc/fwmacro/ipv6stop.rules etc/fwmacro
+../../etc/fwmacro/fw.rules.sample etc/fwmacro
+../../etc/fwmacro/commit.sh.sample etc/fwmacro
+../../etc/fwmacro/Makefile etc/fwmacro
+../../etc/fwmacro/README etc/fwmacro
+../../etc/init.d/fwmacro etc/init.d
+../../scripts/fwmpp usr/bin
+../../scripts/fwmc usr/bin
+../../fwmacro.py usr/lib/python2.5/site-packages
+../../fwmacro.py usr/lib/python2.6/site-packages

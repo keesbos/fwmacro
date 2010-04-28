@@ -1,0 +1,12 @@
+etc
+etc/fwmacro
+etc/fwmacro/chains4
+etc/fwmacro/chains6
+/etc/init.d
+usr
+usr/bin
+usr/lib
+usr/lib/python2.5
+usr/lib/python2.5/site-packages
+usr/lib/python2.6
+usr/lib/python2.6/site-packages

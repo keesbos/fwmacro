@@ -1,0 +1,24 @@
+There are currently two ways of installing fwmacro, with easy_install or from a
+debian package.
+
+fwmacro depends on plex and netaddr.
+
+
+Installation with easy_install:
+make
+sudo easy_install dist/fwmacro-*.egg
+sudo cp -r etc/fwmacro /etc
+
+Note that the installation with easy_install will not install the manpages.
+
+
+Installation from debian package:
+make
+make deb
+sudo apt-get python-setuptools
+sudo dpkg -i distro/python-fwmacro_*_all.deb
+FYI. The debian preinstall script wil do:
+    easy_install plex
+    easy_install netaddr
+
+The debian package will show up in the distro directory.
