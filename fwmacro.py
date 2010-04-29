@@ -46,12 +46,12 @@ CHAINSFILE_IPV6 = os.path.join(BASEDIR, "ipv6.rules")
 
 
 rule_explanation = """\
-DIRECTION ACTION STATES PROTOCOL OPTIONS SOURCE DESTINATION LOG [LOGLEVEL] [LOGNAME]
+DIRECTION ACTION [STATES] PROTOCOL OPTIONS SOURCE DESTINATION LOG [LOGLEVEL] [LOGNAME]
 
 DIRECTION   := ["local"] "in" | "out"
 ACTION      := "permit" | "deny" | "snat" NATARGS | "dnat" NATARGS | "masq"
 STATES      := "NONE" | STATE[,STATE ...]
-STATE       := "ESTABLISHED" | "NEW" | "RELATED" | "INVALID"
+STATE       := "NEW" | "ESTABLISHED" | "RELATED" | "INVALID"
 PROTOCOL    := "ip" | "all" | "tcp" | "udp" | "icmp" | number | `/etc/protocol`
 DESTINATION := SOURCE
 ADDR        := group | hostname | ip/mask | "any"
@@ -81,7 +81,7 @@ SOURCE      := ADDR PORT
 OPTIONS     :=
 """
 
-defaults_txt = """\
+rule_defaults_txt = """\
 Default tcp state: NEW
 """
 
@@ -1862,7 +1862,7 @@ usage: %%prog [options] FILE
 Rule format:
 %(rule_explanation)s
 Defaults:
-%(defaults_txt)s
+%(rule_defaults_txt)s
 ICMP options:
 %(icmp_options_txt)s
 """ % globals(),

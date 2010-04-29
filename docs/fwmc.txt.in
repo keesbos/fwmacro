@@ -52,10 +52,10 @@ OPTIONS
     verbose messages
 
 *--ipv4-rules=IPV4_RULES*::
-    filename of generated iptables-restore file
+    filename of generated iptables-restore file, default: @IPV4 RULES@
 
 *--ipv6-rules=IPV6_RULES*::
-    filename of generated ip6tables-restore file
+    filename of generated ip6tables-restore file, default: @IPV6 RULES@
 
 *--no-ipv4*::
     no iptables chains (ipv4)
@@ -63,10 +63,10 @@ OPTIONS
     no ip6tables chains (ipv6)
 
 *--ipv4-chains=DIRECTORY*::
-    directory with iptables chains (default: /etc/fwmacro/chains4)
+    directory with iptables chains, default: @CHAINS4 DIR@
 
 *--ipv6-chains=DIRECTORY*::
-    directory with ip6tables chains (default: /etc/fwmacro/chains6)
+    directory with ip6tables chains, default: @CHAINS6 DIR@
 
 *--reserved-target=RESERVED_TARGETS*::
     reserved target (e.g. ACCEPT) that will not be mapped to a chain
@@ -89,7 +89,7 @@ EXIT STATUS
 
 BUGS
 ----
-See the project page: http://fwmacro.googlecode.com/
+See the project page: <http://fwmacro.googlecode.com/>
 
 
 SEE ALSO
@@ -104,7 +104,7 @@ Written by Kees Bos <k.bos@zx.nl>
 
 RESOURCES
 ---------
-Web site and code: <http://code.google.com/p/fwmacro/>
+Web site and code: <http://fwmacro.googlecode.com/>
 
 
 COPYING

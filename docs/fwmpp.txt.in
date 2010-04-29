@@ -36,13 +36,13 @@ OPTIONS
     verbose messages
 
 *--ipv4-chains=DIRECTORY*::
-    directory with iptables chains (default: /etc/fwmacro/chains4)
+    directory with iptables chains, default: @CHAINS4 DIR@
 
 *--ipv6-chains=DIRECTORY*::
-    directory with ip6tables chains (default: /etc/fwmacro/chains6)
+    directory with ip6tables chains, default: @CHAINS6 DIR@
 
-*--logtag=LOGTAG*::
-    log tag template (default: '%(iface)s-%(chainname)s-%(lineno)s')
+*--logtag=LOGTAG::
+    log tag template, default: @LOG TAG@
 
 
 EXIT STATUS
@@ -59,6 +59,7 @@ RULE SYNTAX
 
 @RULE SYNTAX@
 
+@RULE DEFAULTS@
 
 EXAMPLE
 -------
@@ -87,7 +88,7 @@ EXAMPLE
 
 BUGS
 ----
-See the project page: http://fwmacro.googlecode.com/
+See the project page: <http://fwmacro.googlecode.com/>
 
 
 SEE ALSO
@@ -102,7 +103,7 @@ Written by Kees Bos <k.bos@zx.nl>
 
 RESOURCES
 ---------
-Web site and code: <http://code.google.com/p/fwmacro/>
+Web site and code: <http://fwmacro.googlecode.com/>
 
 
 COPYING
