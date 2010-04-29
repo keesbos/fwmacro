@@ -36,3 +36,6 @@ deb-clean:
 	rm -f distro/python-fwmacro_*.deb
 	rm -f distro/python-fwmacro_*.changes
 
+pypi-upload: all
+	python setup.py bdist_egg upload
+	python setup.py sdist upload
