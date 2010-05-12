@@ -54,7 +54,7 @@ STATES      := "NONE" | STATE[,STATE ...]
 STATE       := "NEW" | "ESTABLISHED" | "RELATED" | "INVALID"
 PROTOCOL    := "ip" | "all" | "tcp" | "udp" | "icmp" | number | `/etc/protocol`
 DESTINATION := SOURCE
-ADDR        := group | hostname | ip/mask | "any"
+ADDR        := group | fqdn-hostname | ip/mask | "any"
 PORT        := number | "all"
 LOG         := log [syslog_level]
 
@@ -1917,9 +1917,13 @@ ICMP options:
     fwprepocess.chainsdir_ip6 = opts.chainsdir_ip6
     fwprepocess.logtag = opts.logtag
 
-    fwprepocess.read_fwrules()
-    fwprepocess.resolve()
-    chains4, chains6 = fwprepocess.make_rules()
+    try:
+        fwprepocess.read_fwrules()
+        fwprepocess.resolve()
+        chains4, chains6 = fwprepocess.make_rules()
+    except FWMacroException, e:
+        sys.stderr.write(e.log_message())
+        sys.exit(1)
     if fwprepocess.nerrors == 0:
         fwprepocess.write_rules(chains4, chains6)
     else:
