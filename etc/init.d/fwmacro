@@ -26,7 +26,7 @@ case "$1" in
 		fi
 		if [ -x /sbin/ip6tables ] ; then
 			if [ -f $IPv6RULES ] ; then
-				iptables-restore $IPv6RULES
+				ip6tables-restore $IPv6RULES
 			else
 				echo "File missing: $IPv6RULES" >&2
 				exit 1
@@ -42,7 +42,7 @@ case "$1" in
 		fi
 		if [ -x /sbin/ip6tables ] ; then
 			if [ -f $IPv6STOPRULES ] ; then
-				iptables-restore $IPv6STOPRULES
+				ip6tables-restore $IPv6STOPRULES
 			else
 				echo "File missing: $IPv6STOPRULES" >&2
 				exit 1
