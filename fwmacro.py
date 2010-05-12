@@ -344,12 +344,12 @@ class Group(list):
                 for ip in ipv4:
                     if not ip in self.ipv4:
                         if ip.network != ip.ip:
-                            raise FWIPMaskBoundaryError(ip)
+                            raise FWIPMaskBoundaryError(ip, self.lineno)
                         self.ipv4.append(ip)
                 for ip in ipv6:
                     if not ip in self.ipv6:
                         if ip.network != ip.ip:
-                            raise FWIPMaskBoundaryError(ip)
+                            raise FWIPMaskBoundaryError(ip, self.lineno)
                         self.ipv6.append(ip)
         self.resolved = True
         self.ipv4.sort()
@@ -359,6 +359,7 @@ class Group(list):
     def ips(self):
         assert self.resolved is not None
         return self.ipv4 + self.ipv6
+
 
 class Hostname(Group):
 
@@ -1262,7 +1263,7 @@ class FWPreprocess(Scanner):
             try:
                 ip = netaddr.IPNetwork(name)
                 if ip.network != ip.ip:
-                    self.log_error(FWIPMaskBoundaryError(ip).log_message())
+                    self.log_error(FWIPMaskBoundaryError(ip, rule.lineno).log_message())
                 ips = [ip]
             except netaddr.core.AddrFormatError, e:
                 if self.groups.has_key(name) and \

@@ -194,6 +194,13 @@ group foo:
             [(3, "Unexpected '!'")],
         )
 
+    def testGroupIPMaskBoundaryError(self):
+        rules = """
+group foo:
+    127.0.0.1/30
+"""
+        self.assertRaises(FWIPMaskBoundaryError, self.get_chains, rules)
+
     def testInterfaceRule(self):
         rules = """
 interface lo:
@@ -361,6 +368,39 @@ interface eth0:
                 "-t nat -o eth0 -p all -A 101oeth0:ifs -j MASQUERADE --src 192.168.0.0/24",
             ],
         )
+
+    def testIPv6GroupSimple(self):
+        rules = """
+group foo:
+    2001:470:15:80::2/128
+
+group bar:
+    2001:470:15::/64
+    2001:470:15::/63
+    2001:470:14::/63
+"""
+        fwprepocess = self.get_fwprepocess(rules)
+        self.assertEquals(
+            fwprepocess.groups["foo"],
+            [
+                IPNetwork('2001:470:15:80::2/128'),
+            ],
+        )
+        self.assertEquals(
+            fwprepocess.groups["bar"],
+            [
+                IPNetwork('2001:470:14::/63'), 
+                IPNetwork('2001:470:15::/63'), 
+                IPNetwork('2001:470:15::/64'),
+            ],
+        )
+
+    def testIPv6GroupIPMaskBoundaryError(self):
+        rules = """
+group foo:
+    2001:470:15:80::1/126
+"""
+        self.assertRaises(FWIPMaskBoundaryError, self.get_chains, rules)
 
     def testExample(self):
         # Test the example from
