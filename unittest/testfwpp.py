@@ -182,6 +182,7 @@ group foo:
         self.assertTrue(
             isinstance(fwprepocess.groups["foo"][0], Hostname)
         )
+        fwprepocess.resolve()
 
     def testGroupNot(self):
         rules = """
@@ -402,7 +403,7 @@ group foo:
 """
         self.assertRaises(FWIPMaskBoundaryError, self.get_chains, rules)
 
-    def testExample(self):
+    def testExampleSyntax(self):
         # Test the example from
         # http://code.google.com/p/fwmacro/wiki/Syntax_fwmpp
         rules = """
@@ -442,6 +443,62 @@ interface eth0:
                 '-t filter -i eth0 -p all -m state --state NEW -A 101ieth0:ifs -j LOG --log-prefix "eth0-ifs-21-permit " --log-level warning -m limit --limit 60/minute --limit-burst 10',
                 '-t filter -i eth0 -p all -m state --state NEW -A 101ieth0:ifs -j RETURN',
                 '-t filter -o eth0 -p all -m state --state NEW -A 101oeth0:ifs -j ACCEPT'
+            ],
+        )
+
+    def testExampleManFwmpp(self):
+        # Test the example from the fwmpp manual
+        rules = """
+group search_engines:
+    google.com
+    yahoo.com
+
+ruleset search_engines:
+    out permit tcp any all search_engines 80
+
+interface lo:
+    # Permit anything to loopback interfice
+    local in permit ip any any
+    local out permit ip any any
+
+interface eth0:
+    local out permit tcp any all search_engines 80
+    ruleset search_engines
+    local out permit ip any any
+    local in deny ip any any log
+    # The rest is denied and logged
+    in deny ip any any log
+    out deny ip any any log
+"""
+        fwprepocess, chains4, chains6 = self.get_chains(rules)
+        self.assertEqual(
+            chains4["fwm-ifs"],
+            [
+                '-t filter -o eth0 -p tcp -m state --state NEW -A 101Oeth0:ifs -j ACCEPT   --dst 209.191.122.70/32 --dport 80',
+                '-t filter -o eth0 -p tcp -m state --state NEW -A 101Oeth0:ifs -j ACCEPT   --dst 209.85.229.147/32 --dport 80',
+                '-t filter -o eth0 -p tcp -m state --state NEW -A 101Oeth0:ifs -j ACCEPT   --dst 209.85.229.104/32 --dport 80',
+                '-t filter -o eth0 -p tcp -m state --state NEW -A 101Oeth0:ifs -j ACCEPT   --dst 209.85.229.99/32 --dport 80',
+                '-t filter -o eth0 -p tcp -m state --state NEW -A 101Oeth0:ifs -j ACCEPT   --dst 98.137.149.56/32 --dport 80',
+                '-t filter -o eth0 -p tcp -m state --state NEW -A 101Oeth0:ifs -j ACCEPT   --dst 72.30.2.43/32 --dport 80',
+                '-t filter -o eth0 -p tcp -m state --state NEW -A 101Oeth0:ifs -j ACCEPT   --dst 69.147.125.65/32 --dport 80',
+                '-t filter -o eth0 -p tcp -m state --state NEW -A 101Oeth0:ifs -j ACCEPT   --dst 67.195.160.76/32 --dport 80',
+                '-t filter -o eth0 -p tcp -m state --state NEW -A 101oeth0:ifs -j ACCEPT   --dst 209.191.122.70/32 --dport 80',
+                '-t filter -o eth0 -p tcp -m state --state NEW -A 101oeth0:ifs -j ACCEPT   --dst 209.85.229.147/32 --dport 80',
+                '-t filter -o eth0 -p tcp -m state --state NEW -A 101oeth0:ifs -j ACCEPT   --dst 209.85.229.104/32 --dport 80',
+                '-t filter -o eth0 -p tcp -m state --state NEW -A 101oeth0:ifs -j ACCEPT   --dst 209.85.229.99/32 --dport 80',
+                '-t filter -o eth0 -p tcp -m state --state NEW -A 101oeth0:ifs -j ACCEPT   --dst 98.137.149.56/32 --dport 80',
+                '-t filter -o eth0 -p tcp -m state --state NEW -A 101oeth0:ifs -j ACCEPT   --dst 72.30.2.43/32 --dport 80',
+                '-t filter -o eth0 -p tcp -m state --state NEW -A 101oeth0:ifs -j ACCEPT   --dst 69.147.125.65/32 --dport 80',
+                '-t filter -o eth0 -p tcp -m state --state NEW -A 101oeth0:ifs -j ACCEPT   --dst 67.195.160.76/32 --dport 80',
+                '-t filter -o eth0 -p all -m state --state NEW -A 101Oeth0:ifs -j ACCEPT',
+                '-t filter -i eth0 -p all -m state --state NEW -A 101Ieth0:ifs -j LOG --log-prefix "eth0-ifs-18-deny " --log-level warning -m limit --limit 60/minute --limit-burst 10',
+                '-t filter -i eth0 -p all -m state --state NEW -A 101Ieth0:ifs -j DROP',
+                '-t filter -i eth0 -p all -m state --state NEW -A 101ieth0:ifs -j LOG --log-prefix "eth0-ifs-20-deny " --log-level warning -m limit --limit 60/minute --limit-burst 10',
+                '-t filter -i eth0 -p all -m state --state NEW -A 101ieth0:ifs -j DROP',
+                '-t filter -o eth0 -p all -m state --state NEW -A 101oeth0:ifs -j LOG --log-prefix "eth0-ifs-21-deny " --log-level warning -m limit --limit 60/minute --limit-burst 10',
+                '-t filter -o eth0 -p all -m state --state NEW -A 101oeth0:ifs -j DROP',
+                '-t filter -i lo -p all -m state --state NEW -A 101Ilo:ifs -j ACCEPT',
+                '-t filter -o lo -p all -m state --state NEW -A 101Olo:ifs -j ACCEPT'
             ],
         )
 

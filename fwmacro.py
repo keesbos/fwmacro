@@ -1395,7 +1395,8 @@ class FWPreprocess(Scanner):
             except FWResolveError, e:
                 self.log_error(e.log_message(), e.lineno)
         for group in self.groups.itervalues():
-            if group.lineno is None:
+            if group.lineno is None and not \
+               isinstance(group, Hostname):
                 raise FWUndefinedGroup(group.name, group.referred_lines[0])
 
     def make_rule(self, chainnr, chainname, iface, rule):
