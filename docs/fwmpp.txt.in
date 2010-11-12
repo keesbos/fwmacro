@@ -41,7 +41,7 @@ OPTIONS
 *--ipv6-chains=DIRECTORY*::
     directory with ip6tables chains, default: @CHAINS6 DIR@
 
-*--logtag=LOGTAG::
+*--logtag=LOGTAG*::
     log tag template, default: @LOG TAG@
 
 
