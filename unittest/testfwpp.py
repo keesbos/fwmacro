@@ -417,6 +417,25 @@ interface eth0:
             ],
         )
 
+    def testProtocolIcmp(self):
+        rules = """
+interface eth0:
+    in permit icmp any any
+"""
+        fwprepocess, chains4, chains6 = self.get_chains(rules)
+        self.assertEquals(
+            chains4["fwm-ifs"],
+            [
+                '-t filter -i eth0 -p icmp -m state --state NEW -A 101ieth0:ifs -j RETURN',
+            ],
+        )
+        self.assertEquals(
+            chains6["fwm-ifs"],
+            [
+                '-t filter -i eth0 -p icmpv6 -m state --state NEW -A 101ieth0:ifs -j RETURN',
+            ],
+        )
+
     def testExampleSyntax(self):
         # Test the example from
         # http://code.google.com/p/fwmacro/wiki/Syntax_fwmpp

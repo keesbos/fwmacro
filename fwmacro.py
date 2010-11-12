@@ -1409,10 +1409,11 @@ class FWPreprocess(Scanner):
         dsts_ip4, dsts_ip6 = self.resolve_ip(rule.destinations, rule)
         lines_ip4 = []
         lines_ip6 = []
-        line = []
+        line_ipv4 = []
+        line_ipv6 = []
         targets = []
         if rule.nat or rule.action == "masq":
-            line += ["-t nat"]
+            line_ipv4 += ["-t nat"]
             if not srcs_ip4 or not dsts_ip4:
                 self.log_error("NAT rule only valid for IPv4", rule.lineno)
             else:
@@ -1424,7 +1425,8 @@ class FWPreprocess(Scanner):
                     if dst[1] != all:
                         self.log_warning("Ignoring %s rule for IPv6 destination address %s" % (rule.action, dst), rule.lineno)
         else:
-            line += ["-t filter"]
+            line_ipv4 += ["-t filter"]
+            line_ipv6 += ["-t filter"]
         if rule.logging:
             lineno = rule.lineno
             action = rule.action
@@ -1437,16 +1439,24 @@ class FWPreprocess(Scanner):
             # iptables-restore needs strings in "" and not ''
             targets.append('LOG --log-prefix "%s " --log-level %s -m limit --limit 60/minute --limit-burst 10' % (s, rule.logging))
         if rule.direction == "in":
-            line += ["-i", iface]
+            line_ipv4 += ["-i", iface]
+            line_ipv6 += ["-i", iface]
         elif rule.direction == "out":
-            line += ["-o", iface]
+            line_ipv4 += ["-o", iface]
+            line_ipv6 += ["-o", iface]
         else:
             self.log_error("Invalid direction '%s'" % rule.direction, rule.lineno)
         chainname = rule.chainname(chainnr, chainname, iface)
-        line += ["-p", rule.protocol]
+        line_ipv4 += ["-p", rule.protocol]
+        if rule.protocol == 'icmp':
+            line_ipv6 += ["-p", 'icmpv6']
+        else:
+            line_ipv6 += ["-p", rule.protocol]
         if rule.state:
-            line += ["-m state --state", rule.state]
-        line += ["-A %d%s" % (100 + chainnr, chainname)]
+            line_ipv4 += ["-m state --state", rule.state]
+            line_ipv6 += ["-m state --state", rule.state]
+        line_ipv4 += ["-A %d%s" % (100 + chainnr, chainname)]
+        line_ipv6 += ["-A %d%s" % (100 + chainnr, chainname)]
         if rule.nat:
             if rule.natports:
                 nat = "%s:%s" % (rule.nat, rule.natports)
@@ -1454,10 +1464,10 @@ class FWPreprocess(Scanner):
                 nat = rule.nat
             if rule.action == "snat":
                 targets.append("SNAT")
-                line += ["-j %(target)s --to-source", nat]
+                line_ipv4 += ["-j %(target)s --to-source", nat]
             else:
                 targets.append("DNAT")
-                line += ["-j %(target)s --to-destination", nat]
+                line_ipv4 += ["-j %(target)s --to-destination", nat]
         else:
             if rule.action == "permit":
                 if rule.direction == "in" and \
@@ -1465,14 +1475,18 @@ class FWPreprocess(Scanner):
                     targets.append("RETURN")
                 else:
                     targets.append("ACCEPT")
-                line += ["-j %(target)s"]
+                line_ipv4 += ["-j %(target)s"]
+                line_ipv6 += ["-j %(target)s"]
             elif rule.action == "deny":
                 targets.append("DROP")
-                line += ["-j %(target)s"]
+                line_ipv4 += ["-j %(target)s"]
+                line_ipv6 += ["-j %(target)s"]
             elif rule.action == "masq":
                 targets.append("MASQUERADE")
-                line += ["-j %(target)s"]
-        line_start = " ".join(line)
+                line_ipv4 += ["-j %(target)s"]
+                line_ipv6 += ["-j %(target)s"]
+        line_ipv4_start = " ".join(line_ipv4)
+        line_ipv6_start = " ".join(line_ipv6)
         # Get all src ports (two lists: ranges and comma sep)
         src_comma_ports, src_range_ports = self.resolve_ports(rule.srcports, rule)
         # Get all destination ips
@@ -1487,8 +1501,10 @@ class FWPreprocess(Scanner):
             destinations = dsts_ip4 + dsts_ip6
         for src_invert, src_ip in sources:
             if src_ip.version == 4:
+                line_start = line_ipv4_start
                 lines = lines_ip4
             else:
+                line_start = line_ipv6_start
                 lines = lines_ip6
             if src_ip.prefixlen == 0:
                 src = ""
