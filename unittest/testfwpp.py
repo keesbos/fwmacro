@@ -7,6 +7,7 @@ from netaddr import IPNetwork
 import fwmacro
 from fwmacro import *
 
+
 class FWPreprocess(fwmacro.FWPreprocess):
     def __init__(self, *args, **kwargs):
         fwmacro.FWPreprocess.__init__(self, *args, **kwargs)
@@ -471,25 +472,24 @@ interface eth0:
     out deny ip any any log
 """
         fwprepocess, chains4, chains6 = self.get_chains(rules)
+        google = Hostname('google.com', None).resolve()
+        yahoo = Hostname('yahoo.com', None).resolve()
+        expected = []
+        ips = google[0] + yahoo[0]
+        for ip in ips:
+            expected.append(
+                '''-t filter -o eth0 -p tcp -m state --state NEW -A 101Oeth0:ifs -j ACCEPT   --dst %s --dport 80''' % ip
+            )
+            expected.append(
+                '''-t filter -o eth0 -p tcp -m state --state NEW -A 101oeth0:ifs -j ACCEPT   --dst %s --dport 80''' % ip
+            )
+        expected.sort()
+        chains4_sorted = chains4["fwm-ifs"][:2*len(ips)]
+        chains4_sorted.sort()
+        self.assertEqual(chains4_sorted, expected)
         self.assertEqual(
-            chains4["fwm-ifs"],
+            chains4["fwm-ifs"][2*len(ips):],
             [
-                '-t filter -o eth0 -p tcp -m state --state NEW -A 101Oeth0:ifs -j ACCEPT   --dst 209.191.122.70/32 --dport 80',
-                '-t filter -o eth0 -p tcp -m state --state NEW -A 101Oeth0:ifs -j ACCEPT   --dst 209.85.229.147/32 --dport 80',
-                '-t filter -o eth0 -p tcp -m state --state NEW -A 101Oeth0:ifs -j ACCEPT   --dst 209.85.229.104/32 --dport 80',
-                '-t filter -o eth0 -p tcp -m state --state NEW -A 101Oeth0:ifs -j ACCEPT   --dst 209.85.229.99/32 --dport 80',
-                '-t filter -o eth0 -p tcp -m state --state NEW -A 101Oeth0:ifs -j ACCEPT   --dst 98.137.149.56/32 --dport 80',
-                '-t filter -o eth0 -p tcp -m state --state NEW -A 101Oeth0:ifs -j ACCEPT   --dst 72.30.2.43/32 --dport 80',
-                '-t filter -o eth0 -p tcp -m state --state NEW -A 101Oeth0:ifs -j ACCEPT   --dst 69.147.125.65/32 --dport 80',
-                '-t filter -o eth0 -p tcp -m state --state NEW -A 101Oeth0:ifs -j ACCEPT   --dst 67.195.160.76/32 --dport 80',
-                '-t filter -o eth0 -p tcp -m state --state NEW -A 101oeth0:ifs -j ACCEPT   --dst 209.191.122.70/32 --dport 80',
-                '-t filter -o eth0 -p tcp -m state --state NEW -A 101oeth0:ifs -j ACCEPT   --dst 209.85.229.147/32 --dport 80',
-                '-t filter -o eth0 -p tcp -m state --state NEW -A 101oeth0:ifs -j ACCEPT   --dst 209.85.229.104/32 --dport 80',
-                '-t filter -o eth0 -p tcp -m state --state NEW -A 101oeth0:ifs -j ACCEPT   --dst 209.85.229.99/32 --dport 80',
-                '-t filter -o eth0 -p tcp -m state --state NEW -A 101oeth0:ifs -j ACCEPT   --dst 98.137.149.56/32 --dport 80',
-                '-t filter -o eth0 -p tcp -m state --state NEW -A 101oeth0:ifs -j ACCEPT   --dst 72.30.2.43/32 --dport 80',
-                '-t filter -o eth0 -p tcp -m state --state NEW -A 101oeth0:ifs -j ACCEPT   --dst 69.147.125.65/32 --dport 80',
-                '-t filter -o eth0 -p tcp -m state --state NEW -A 101oeth0:ifs -j ACCEPT   --dst 67.195.160.76/32 --dport 80',
                 '-t filter -o eth0 -p all -m state --state NEW -A 101Oeth0:ifs -j ACCEPT',
                 '-t filter -i eth0 -p all -m state --state NEW -A 101Ieth0:ifs -j LOG --log-prefix "eth0-ifs-18-deny " --log-level warning -m limit --limit 60/minute --limit-burst 10',
                 '-t filter -i eth0 -p all -m state --state NEW -A 101Ieth0:ifs -j DROP',
