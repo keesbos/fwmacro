@@ -917,9 +917,13 @@ class FWPreprocess(Scanner):
         else:
             invert = ""
         if not token in ["ip", "all", "icmp", "tcp", "udp", "number"]:
-            self.log_error("Invalid protocol '%s'" % text)
-            token, text = self.skip_this_line()
-            return None
+            if text in self.protocols:
+                token = "number"
+                text = self.protocols[text]
+            else:
+                self.log_error("Invalid protocol '%s'" % text)
+                token, text = self.skip_this_line()
+                return None
         if rule.action in ["dnat"]:
             if token in ["tcp", "udp"]:
                 if not rule.natports:

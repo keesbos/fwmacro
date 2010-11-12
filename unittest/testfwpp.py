@@ -416,6 +416,24 @@ interface eth0:
                 '-t filter -i eth0 -p 41 -m state --state NEW -A 101ieth0:ifs -j RETURN',
             ],
         )
+    def testProtocolName(self):
+        rules = """
+interface eth0:
+    in permit igmp any any
+"""
+        fwprepocess, chains4, chains6 = self.get_chains(rules)
+        self.assertEquals(
+            chains4["fwm-ifs"],
+            [
+                '-t filter -i eth0 -p 2 -m state --state NEW -A 101ieth0:ifs -j RETURN',
+            ],
+        )
+        self.assertEquals(
+            chains6["fwm-ifs"],
+            [
+                '-t filter -i eth0 -p 2 -m state --state NEW -A 101ieth0:ifs -j RETURN',
+            ],
+        )
 
     def testProtocolIcmp(self):
         rules = """
