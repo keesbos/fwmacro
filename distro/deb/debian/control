@@ -4,6 +4,7 @@ Priority: optional
 Homepage: http://fwmacro.googlecode.com/
 Standards-Version: 3.7.3
 XS-Python-Version: all
+Maintainer: Kees Bos <cornelis.bos@gmail.com>
 
 Package: python-fwmacro
 Architecture: all

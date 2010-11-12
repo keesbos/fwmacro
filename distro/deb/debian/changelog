@@ -1,6 +1,15 @@
+python-fwmacro (0.9.1) unstable; urgency=low
+
+  * Fix the use of protocol numbers in fwmpp
+
+  * Handle icmp protocol for ivp6 as icmpv6
+
+  * Fix use of /etc/protocols
+
+ -- Kees Bos <k.bos@zx.nl>  Fri, 12 Nov 2010 13:00:00 +0100
+
 python-fwmacro (0.9) unstable; urgency=low
 
   * Initial release.
 
  -- Kees Bos <k.bos@zx.nl>  Thu, 22 Apr 2010 15:04:50 +0200
-
