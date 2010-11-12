@@ -404,6 +404,19 @@ group foo:
 """
         self.assertRaises(FWIPMaskBoundaryError, self.get_chains, rules)
 
+    def testProtocolNumber(self):
+        rules = """
+interface eth0:
+    in permit 41 any any
+"""
+        fwprepocess, chains4, chains6 = self.get_chains(rules)
+        self.assertEquals(
+            chains4["fwm-ifs"],
+            [
+                '-t filter -i eth0 -p 41 -m state --state NEW -A 101ieth0:ifs -j RETURN',
+            ],
+        )
+
     def testExampleSyntax(self):
         # Test the example from
         # http://code.google.com/p/fwmacro/wiki/Syntax_fwmpp
