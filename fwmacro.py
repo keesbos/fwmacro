@@ -5,7 +5,7 @@
 # Released under the MIT license. See LICENSE file for details.
 #
 
-__version__ = (0, 9, 1)
+__version__ = (0, 9, 2)
 
 import sys
 import socket

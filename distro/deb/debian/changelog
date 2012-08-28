@@ -1,3 +1,13 @@
+python-fwmacro (0.9.2) unstable; urgency=low
+
+  * Fix for icmp options
+
+  * Fix for python2.6 install path
+
+  * Init script now conforms to LSB standards
+
+ -- Kees Bos <k.bos@zx.nl>  Mon, 27 Aug 2012 11:14:46 +0100
+
 python-fwmacro (0.9.1) unstable; urgency=low
 
   * Fix the use of protocol numbers in fwmpp
