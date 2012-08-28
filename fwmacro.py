@@ -125,6 +125,29 @@ address-mask-request
 address-mask-reply
 """
 
+# ip6tables -p ipv6-icmp -h
+icmpv6_options_txt = """\
+destination-unreachable
+   no-route
+   communication-prohibited
+   address-unreachable
+   port-unreachable
+packet-too-big
+time-exceeded (ttl-exceeded)
+   ttl-zero-during-transit
+   ttl-zero-during-reassembly
+parameter-problem
+   bad-header
+   unknown-header-type
+   unknown-option
+echo-request (ping)
+echo-reply (pong)
+router-solicitation
+router-advertisement
+neighbour-solicitation (neighbor-solicitation)
+neighbour-advertisement (neighbor-advertisement)
+redirect
+"""
 
 invalid_names = []
 reserved_words = ["group", "interface", "ruleset",
@@ -136,11 +159,13 @@ reserved_words = ["group", "interface", "ruleset",
 logging_levels = ["debug", "info", "notice", "warning", 
                   "err", "crit", "alert", "emerg"]
 invalid_names = invalid_names + reserved_words + logging_levels
-for line in icmp_options_txt.split("\n"):
-    line = line.strip().split()
-    if line:
-        line = line[0].strip()
-        invalid_names.append(line)
+for txt in (icmp_options_txt, icmpv6_options_txt):
+    for line in txt.split("\n"):
+        line = line.strip().split()
+        if line:
+            line = line[0].strip()
+            if not line in invalid_names:
+                invalid_names.append(line)
 
 default_log_level = "warning"
 
@@ -518,14 +543,24 @@ class FWPreprocess(Scanner):
         tcp__flags |= Str(f)
     tcp_flags = Opt(Str("!") + opt_space) + tcp__flags + Rep(comma_sep + tcp__flags)
     icmp_types = None
-    for t in icmp_options_txt.split("\n"):
-         t = t.split("(")[0]
-         t = t.strip()
-         if t:
-             if icmp_types is None:
-                 icmp_types = Str(t)
-             else:
-                 icmp_types |= Str(t)
+    icmp_type_names = []
+    icmpv4_type_names = []
+    icmpv6_type_names = []
+    for txt, lst in (
+        (icmp_options_txt, icmpv4_type_names),
+        (icmpv6_options_txt, icmpv6_type_names),
+    ):
+        for n in txt.split("\n"):
+            n = n.split("(")[0].strip()
+            if not n: continue
+            if not n in lst:
+                lst.append(n)
+            if not n in icmp_type_names:
+                icmp_type_names.append(n)
+                if icmp_types is None:
+                    icmp_types = Str(n)
+                else:
+                    icmp_types |= Str(n)
     icmp_type = number + Opt(opt_space + Str("/") + opt_space + number) + spaces
     icmp_type = (icmp_type | icmp_types)
     l3_mask = opt_space + Str("/") + opt_space + (number | ip4 | ip6)
@@ -642,8 +677,10 @@ class FWPreprocess(Scanner):
         self.addrinfos = {}
         self.protocols = self.read_protocols()
         group =  Group("any", 0)
-        group.append(netaddr.IPNetwork("0.0.0.0/0"))
-        group.append(netaddr.IPNetwork("::/0"))
+        self.any_ipv4 = netaddr.IPNetwork("0.0.0.0/0")
+        self.any_ipv6 = netaddr.IPNetwork("::/0")
+        group.append(self.any_ipv4)
+        group.append(self.any_ipv6)
         self.groups["any"] = group
 
     def read_protocols(self, fname="/etc/protocols"):
@@ -1404,6 +1441,13 @@ class FWPreprocess(Scanner):
                isinstance(group, Hostname):
                 raise FWUndefinedGroup(group.name, group.referred_lines[0])
 
+    def purge_default(self, src):
+        dst = []
+        for ip in src:
+            if ip[1] != self.any_ipv4 and ip[1] != self.any_ipv6:
+                dst.append(ip)
+        return dst
+
     def make_rule(self, chainnr, chainname, iface, rule):
         if not rule:
             if self.nerrors == 0:
@@ -1412,6 +1456,21 @@ class FWPreprocess(Scanner):
         # Get all source ips
         srcs_ip4, srcs_ip6 = self.resolve_ip(rule.sources, rule)
         dsts_ip4, dsts_ip6 = self.resolve_ip(rule.destinations, rule)
+        if not srcs_ip4 and dsts_ip4:
+            dsts_ip4 = self.purge_default(dsts_ip4)
+        if srcs_ip4 and not dsts_ip4:
+            srcs_ip4 = self.purge_default(srcs_ip4)
+        if not srcs_ip6 and dsts_ip6:
+            dsts_ip6 = self.purge_default(dsts_ip6)
+        if srcs_ip6 and not dsts_ip6:
+            srcs_ip6 = self.purge_default(srcs_ip6)
+        if (
+            (srcs_ip4 and not dsts_ip4) or 
+            (dsts_ip4 and not srcs_ip4) or 
+            (srcs_ip6 and not dsts_ip6) or 
+            (dsts_ip6 and not srcs_ip6)
+        ):
+            self.log_error("Cannot mix IPv4 and IPv6 source and destination", rule.lineno)
         lines_ip4 = []
         lines_ip6 = []
         line_ipv4 = []
@@ -1458,8 +1517,27 @@ class FWPreprocess(Scanner):
         else:
             line_ipv6 += ["-p", rule.protocol]
         for icmp_type in rule.icmp:
-            line_ipv4 += ['--icmp-type', icmp_type]
-            line_ipv6 += ['--icmp-type', icmp_type]
+            if not icmp_type in self.icmp_type_names:
+                # Should be number[/code]
+                line_ipv4 += ['--icmp-type', icmp_type]
+                line_ipv6 += ['--icmpv6-type', icmp_type]
+            else:
+                if icmp_type in self.icmpv4_type_names:
+                    if not srcs_ip4 and not icmp_type in self.icmpv6_type_names:
+                        self.log_error(
+                            "Cannot use IPv4 icmp type %s in IPv6 rule" % icmp_type,
+                            rule.lineno,
+                        )
+                    else:
+                        line_ipv4 += ['--icmp-type', icmp_type]
+                if icmp_type in self.icmpv6_type_names:
+                    if not srcs_ip6 and not icmp_type in self.icmpv4_type_names:
+                        self.log_error(
+                            "Cannot use IPv6 icmp type %s in IPv4 rule" % icmp_type,
+                            rule.lineno,
+                        )
+                    else:
+                        line_ipv6 += ['--icmpv6-type', icmp_type]
         if rule.state:
             line_ipv4 += ["-m state --state", rule.state]
             line_ipv6 += ["-m state --state", rule.state]
@@ -1891,6 +1969,8 @@ Defaults:
 %(rule_defaults_txt)s
 ICMP options:
 %(icmp_options_txt)s
+ICMPv6 options:
+%(icmpv6_options_txt)s
 """ % globals(),
     )
 

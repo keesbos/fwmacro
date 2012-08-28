@@ -460,7 +460,7 @@ interface eth0:
     in permit icmp 0 2001:470:15:80::3/128 2001:470:15:80::4/128
     in permit icmp echo-reply 2001:470:15:80::3/128 2001:470:15:80::4/128
     in permit icmp 3/0 2001:470:15:80::3/128 2001:470:15:80::4/128
-    in permit icmp network-unreachable 2001:470:15:80::3/128 2001:470:15:80::4/128
+    in permit icmp communication-prohibited 2001:470:15:80::3/128 2001:470:15:80::4/128
 """
         fwprepocess, chains4, chains6 = self.get_chains(rules)
         self.assertEquals(
@@ -471,7 +471,7 @@ interface eth0:
                 '-t filter -i eth0 -p icmp --icmp-type 0 -m state --state NEW -A 101ieth0:ifs -j RETURN --src 1.2.3.4/32  --dst 5.6.7.8/32',
                 '-t filter -i eth0 -p icmp --icmp-type echo-reply -m state --state NEW -A 101ieth0:ifs -j RETURN --src 1.2.3.4/32  --dst 5.6.7.8/32',
                 '-t filter -i eth0 -p icmp --icmp-type 3/0 -m state --state NEW -A 101ieth0:ifs -j RETURN --src 1.2.3.4/32  --dst 5.6.7.8/32',
-                '-t filter -i eth0 -p icmp --icmp-type network-unreachable -m state --state NEW -A 101ieth0:ifs -j RETURN --src 1.2.3.4/32  --dst 5.6.7.8/32'
+                '-t filter -i eth0 -p icmp --icmp-type network-unreachable -m state --state NEW -A 101ieth0:ifs -j RETURN --src 1.2.3.4/32  --dst 5.6.7.8/32',
             ],
         )
         self.assertEquals(
@@ -479,10 +479,10 @@ interface eth0:
             [
                 '-t filter -o eth0 -p icmpv6 -m state --state NEW -A 101oeth0:ifs -j ACCEPT',
                 '-t filter -i eth0 -p icmpv6 -m state --state NEW -A 101ieth0:ifs -j RETURN --src 2001:470:15:80::3/128  --dst 2001:470:15:80::4/128',
-                '-t filter -i eth0 -p icmpv6 --icmp-type 0 -m state --state NEW -A 101ieth0:ifs -j RETURN --src 2001:470:15:80::3/128  --dst 2001:470:15:80::4/128',
-                '-t filter -i eth0 -p icmpv6 --icmp-type echo-reply -m state --state NEW -A 101ieth0:ifs -j RETURN --src 2001:470:15:80::3/128  --dst 2001:470:15:80::4/128',
-                '-t filter -i eth0 -p icmpv6 --icmp-type 3/0 -m state --state NEW -A 101ieth0:ifs -j RETURN --src 2001:470:15:80::3/128  --dst 2001:470:15:80::4/128',
-                '-t filter -i eth0 -p icmpv6 --icmp-type network-unreachable -m state --state NEW -A 101ieth0:ifs -j RETURN --src 2001:470:15:80::3/128  --dst 2001:470:15:80::4/128'
+                '-t filter -i eth0 -p icmpv6 --icmpv6-type 0 -m state --state NEW -A 101ieth0:ifs -j RETURN --src 2001:470:15:80::3/128  --dst 2001:470:15:80::4/128',
+                '-t filter -i eth0 -p icmpv6 --icmpv6-type echo-reply -m state --state NEW -A 101ieth0:ifs -j RETURN --src 2001:470:15:80::3/128  --dst 2001:470:15:80::4/128',
+                '-t filter -i eth0 -p icmpv6 --icmpv6-type 3/0 -m state --state NEW -A 101ieth0:ifs -j RETURN --src 2001:470:15:80::3/128  --dst 2001:470:15:80::4/128',
+                '-t filter -i eth0 -p icmpv6 --icmpv6-type communication-prohibited -m state --state NEW -A 101ieth0:ifs -j RETURN --src 2001:470:15:80::3/128  --dst 2001:470:15:80::4/128',
             ],
         )
 
