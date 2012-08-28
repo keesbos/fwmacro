@@ -40,46 +40,47 @@ IPv6STOPRULES=$ETCDIR/ipv6stop.rules
 #		this, otherwise restart the service if it is running
 # status	print the current status of the service
 
+check_depenencies ( ) {
+	[ -d /etc/fwmacro ] || exit 5
+	# Exit if the fwmacro is not installed
+	[ -d /etc/fwmacro ] || (echo "fwmacro is not installed" >&2 ; exit 5)
+	# Exit if iptables is not installed
+	[ -x /sbin/iptables ] || (echo "iptables is not installed" >&2 ; exit 5)
+	# Exit if IPv4 stop rules are missing
+	[ -f $IPv4STOPRULES ] || echo "File missing: $IPv4STOPRULES" >&2
+	# Exit if IPv4 rules are missing
+	[ -f $IPv4RULES ] || echo "File missing: $IPv4RULES" >&2
+	if [ -x /sbin/ip6tables ] ; then
+		# Exit if IPv6 stop rules are missing
+		[ -f $IPv6STOPRULES ] || echo "File missing: $IPv6STOPRULES" >&2
+		# Exit if IPv6 rules are missing
+		[ -f $IPv6RULES ] || echo "File missing: $IPv6RULES" >&2
+	fi
+}
+
 case "$1" in
 	start|restart|reload|force-reload)
-		if [ -f $IPv4RULES ] ; then
-			iptables-restore $IPv4RULES
-		else
-			echo "File missing: $IPv4RULES" >&2
-			exit 1
-		fi
+		check_depenencies
+		iptables-restore $IPv4RULES
 		if [ -x /sbin/ip6tables ] ; then
-			if [ -f $IPv6RULES ] ; then
-				ip6tables-restore $IPv6RULES
-			else
-				echo "File missing: $IPv6RULES" >&2
-				exit 1
-			fi
+			ip6tables-restore $IPv6RULES
 		fi
 		;;
 	stop)
-		if [ -f $IPv4STOPRULES ] ; then
-			iptables-restore $IPv4STOPRULES
-		else
-			echo "File missing: $IPv4STOPRULES" >&2
-			exit 1
-		fi
+		check_depenencies
+		iptables-restore $IPv4STOPRULES
 		if [ -x /sbin/ip6tables ] ; then
-			if [ -f $IPv6STOPRULES ] ; then
-				ip6tables-restore $IPv6STOPRULES
-			else
-				echo "File missing: $IPv6STOPRULES" >&2
-				exit 1
-			fi
+			ip6tables-restore $IPv6STOPRULES
 		fi
 		;;
 	try-restart)
+		check_depenencies
 		;;
 	status)
 		iptables -L>/dev/null && exit 0 || exit $?
 		;;
 	*)
-		echo "Usage: $0 {start|stop|restart}" >&2
+		echo "Usage: $0 {start|stop|restart|reload|force-reload|try-restart}" >&2
 		exit 3
 		;;
 esac
