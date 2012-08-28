@@ -2,6 +2,18 @@
 #
 # Author: Kees Bos <k.bos@zx.nl>
 #
+
+### BEGIN INIT INFO
+# Provides:		fwmacro
+# Required-Start:	$network $local_fs $syslog
+# Required-Stop:	$network $local_fs $syslog
+# Default-Start:	2 3 4 5
+# Default-Stop:		0 1 6
+# Short-Description:	Start fwmacro compiled iptables firewall rules
+# Description:		Use the meta rules from fwmacro to
+#			generate and use iptables firewall rules
+### END INIT INFO
+
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 DESC="fwmacro firewall rules"
 SCRIPTNAME=/etc/init.d/fwmacro
@@ -16,8 +28,20 @@ IPv6STOPRULES=$ETCDIR/ipv6stop.rules
 # Exit if iptables is not installed
 [ -x /sbin/iptables ] || exit 0
 
+# Arguments:
+# start		start the service
+# stop		stop the service
+# restart	stop and restart the service if the service is already 
+#		running, otherwise start the service
+# try-restart	restart the service if the service is already running
+# reload	cause the configuration of the service to be reloaded without 
+#		actually stopping and restarting the service
+# force-reload	cause the configuration to be reloaded if the service supports 
+#		this, otherwise restart the service if it is running
+# status	print the current status of the service
+
 case "$1" in
-	start|restart)
+	start|restart|reload|force-reload)
 		if [ -f $IPv4RULES ] ; then
 			iptables-restore $IPv4RULES
 		else
@@ -48,6 +72,11 @@ case "$1" in
 				exit 1
 			fi
 		fi
+		;;
+	try-restart)
+		;;
+	status)
+		iptables -L>/dev/null && exit 0 || exit $?
 		;;
 	*)
 		echo "Usage: $0 {start|stop|restart}" >&2

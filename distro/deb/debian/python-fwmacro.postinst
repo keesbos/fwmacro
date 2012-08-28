@@ -1,6 +1,10 @@
 #!/bin/sh
 set -e
 
-update-rc.d fwmacro start 39 S . stop 39 1 .
+if test -x /sbin/insserv ; then
+	/sbin/insserv fwmacro
+else
+	update-rc.d fwmacro start 39 S . stop 39 1 .
+fi
 cat /etc/fwmacro/README
 exit 0

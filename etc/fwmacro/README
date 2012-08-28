@@ -1,3 +1,5 @@
+# fwmacro README
+#
 You might want to add/set several parameters in /etc/sysctl.conf:
 
 # allow this host to route packets between interfaces
@@ -22,3 +24,4 @@ net/ipv4/conf/default/log_martians=0
 
 # Increase the number of tracked connections
 net/nf_conntrack_max=65536
+
