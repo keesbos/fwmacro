@@ -1,7 +1,7 @@
 
 all:
 	dpkg-buildpackage -rfakeroot -uc -b
-	dpkg-deb -c ../python-fwmacro_0.9.2_all.deb
+	dpkg-deb -c ../python-fwmacro_0.9.3_all.deb
 
 clean:
 	fakeroot debian/rules clean
