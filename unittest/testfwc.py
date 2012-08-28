@@ -1,5 +1,17 @@
 #!/usr/bin/env python
 
+import sys
+import os.path
+# Make sure we'll import the fwmacro module from the
+# source directory and not from the system directories
+sys.path.insert(
+        0,
+        os.path.abspath(os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                    "..",
+                )),
+)
+
 import unittest
 from StringIO import StringIO
 from netaddr import IPNetwork

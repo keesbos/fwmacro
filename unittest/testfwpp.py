@@ -1,5 +1,17 @@
 #!/usr/bin/env python
 
+import sys
+import os.path
+# Make sure we'll import the fwmacro module from the
+# source directory and not from the system directories
+sys.path.insert(
+    0,
+    os.path.abspath(os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+        "..",
+    )),
+)
+
 import unittest
 from StringIO import StringIO
 from netaddr import IPNetwork
@@ -45,7 +57,7 @@ class FWMPreprocessTestCase(unittest.TestCase):
         if not permit_errors:
             if fwprepocess.all_errors:
                 print fwprepocess.all_errors
-            self.assertEqual(len(fwprepocess.all_errors), 0)
+            self.assertEqual(len(fwprepocess.all_errors), 0, str(fwprepocess.all_errors))
         if not permit_warnings:
             if fwprepocess.all_warnings:
                 print fwprepocess.all_warnings
@@ -438,19 +450,39 @@ interface eth0:
     def testProtocolIcmp(self):
         rules = """
 interface eth0:
-    in permit icmp any any
+    out permit icmp any any
+    in permit icmp 1.2.3.4/32 5.6.7.8/32
+    in permit icmp 0 1.2.3.4/32 5.6.7.8/32
+    in permit icmp echo-reply 1.2.3.4/32 5.6.7.8/32
+    in permit icmp 3/0 1.2.3.4/32 5.6.7.8/32
+    in permit icmp network-unreachable 1.2.3.4/32 5.6.7.8/32
+    in permit icmp 2001:470:15:80::3/128 2001:470:15:80::4/128
+    in permit icmp 0 2001:470:15:80::3/128 2001:470:15:80::4/128
+    in permit icmp echo-reply 2001:470:15:80::3/128 2001:470:15:80::4/128
+    in permit icmp 3/0 2001:470:15:80::3/128 2001:470:15:80::4/128
+    in permit icmp network-unreachable 2001:470:15:80::3/128 2001:470:15:80::4/128
 """
         fwprepocess, chains4, chains6 = self.get_chains(rules)
         self.assertEquals(
             chains4["fwm-ifs"],
             [
-                '-t filter -i eth0 -p icmp -m state --state NEW -A 101ieth0:ifs -j RETURN',
+                '-t filter -o eth0 -p icmp -m state --state NEW -A 101oeth0:ifs -j ACCEPT',
+                '-t filter -i eth0 -p icmp -m state --state NEW -A 101ieth0:ifs -j RETURN --src 1.2.3.4/32  --dst 5.6.7.8/32',
+                '-t filter -i eth0 -p icmp --icmp-type 0 -m state --state NEW -A 101ieth0:ifs -j RETURN --src 1.2.3.4/32  --dst 5.6.7.8/32',
+                '-t filter -i eth0 -p icmp --icmp-type echo-reply -m state --state NEW -A 101ieth0:ifs -j RETURN --src 1.2.3.4/32  --dst 5.6.7.8/32',
+                '-t filter -i eth0 -p icmp --icmp-type 3/0 -m state --state NEW -A 101ieth0:ifs -j RETURN --src 1.2.3.4/32  --dst 5.6.7.8/32',
+                '-t filter -i eth0 -p icmp --icmp-type network-unreachable -m state --state NEW -A 101ieth0:ifs -j RETURN --src 1.2.3.4/32  --dst 5.6.7.8/32'
             ],
         )
         self.assertEquals(
             chains6["fwm-ifs"],
             [
-                '-t filter -i eth0 -p icmpv6 -m state --state NEW -A 101ieth0:ifs -j RETURN',
+                '-t filter -o eth0 -p icmpv6 -m state --state NEW -A 101oeth0:ifs -j ACCEPT',
+                '-t filter -i eth0 -p icmpv6 -m state --state NEW -A 101ieth0:ifs -j RETURN --src 2001:470:15:80::3/128  --dst 2001:470:15:80::4/128',
+                '-t filter -i eth0 -p icmpv6 --icmp-type 0 -m state --state NEW -A 101ieth0:ifs -j RETURN --src 2001:470:15:80::3/128  --dst 2001:470:15:80::4/128',
+                '-t filter -i eth0 -p icmpv6 --icmp-type echo-reply -m state --state NEW -A 101ieth0:ifs -j RETURN --src 2001:470:15:80::3/128  --dst 2001:470:15:80::4/128',
+                '-t filter -i eth0 -p icmpv6 --icmp-type 3/0 -m state --state NEW -A 101ieth0:ifs -j RETURN --src 2001:470:15:80::3/128  --dst 2001:470:15:80::4/128',
+                '-t filter -i eth0 -p icmpv6 --icmp-type network-unreachable -m state --state NEW -A 101ieth0:ifs -j RETURN --src 2001:470:15:80::3/128  --dst 2001:470:15:80::4/128'
             ],
         )
 

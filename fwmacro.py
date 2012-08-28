@@ -66,7 +66,7 @@ OPTIONS     :=
 
 protocol icmp:
 SOURCE      := SRC
-OPTIONS     := icmp-option [/number]
+OPTIONS     := [number[/code]|icmp-option]
 
 protocol tcp:
 SOURCE      := ADDR PORT
@@ -526,7 +526,8 @@ class FWPreprocess(Scanner):
                  icmp_types = Str(t)
              else:
                  icmp_types |= Str(t)
-    icmp_type = (icmp_types | number) + Opt(opt_space + Str("/") + opt_space + number)
+    icmp_type = number + Opt(opt_space + Str("/") + opt_space + number) + spaces
+    icmp_type = (icmp_type | icmp_types)
     l3_mask = opt_space + Str("/") + opt_space + (number | ip4 | ip6)
     l3_hostname = Opt(Str("!") + opt_space) + hostname
     l3_ip = Opt(Str("!") + opt_space) + (ip4 | ip6) + Opt(l3_mask)
@@ -1456,6 +1457,9 @@ class FWPreprocess(Scanner):
             line_ipv6 += ["-p", 'icmpv6']
         else:
             line_ipv6 += ["-p", rule.protocol]
+        for icmp_type in rule.icmp:
+            line_ipv4 += ['--icmp-type', icmp_type]
+            line_ipv6 += ['--icmp-type', icmp_type]
         if rule.state:
             line_ipv4 += ["-m state --state", rule.state]
             line_ipv6 += ["-m state --state", rule.state]
