@@ -1539,8 +1539,11 @@ class FWPreprocess(Scanner):
                     else:
                         line_ipv6 += ['--icmpv6-type', icmp_type]
         if rule.state:
-            line_ipv4 += ["-m state --state", rule.state]
-            line_ipv6 += ["-m state --state", rule.state]
+            if rule.protocol == 'icmp':
+                line_ipv4 += ["-m state --state", rule.state]
+            else:
+                line_ipv4 += ["-m state --state", rule.state]
+                line_ipv6 += ["-m state --state", rule.state]
         line_ipv4 += ["-A %d%s" % (100 + chainnr, chainname)]
         line_ipv6 += ["-A %d%s" % (100 + chainnr, chainname)]
         if rule.nat:
