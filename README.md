@@ -24,7 +24,8 @@ Typical setup/usage will be:
 
 ## Installation
 
-On Debian / Ubuntu you might want to use the .deb from the files section (also install manuals).
+On Debian / Ubuntu you might want to use the .deb from the files section (also installs manuals).
+ * wget https://github.com/keesbos/fwmacro/raw/master/files/python-fwmacro_0.9.4_all.deb
 
 With easy_install:
  * easy_install fwmacro
