@@ -1,10 +1,10 @@
 Source: python-fwmacro
 Section: python
 Priority: optional
-Homepage: http://fwmacro.googlecode.com/
+Homepage: https://github.com/keesbos/fwmacro
 Standards-Version: 3.7.3
-XS-Python-Version: all
 Maintainer: Kees Bos <cornelis.bos@gmail.com>
+XS-Python-Version: all
 
 Package: python-fwmacro
 Architecture: all

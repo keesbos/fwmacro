@@ -1,4 +1,3 @@
-import sys, os
 try:
     from setuptools import setup
     kw = {"entry_points":
@@ -12,13 +11,11 @@ except ImportError:
     from distutils.core import setup
     kw = {"scripts": ["scripts/fwmpp", "scripts/fwmc"]}
 
-import fwmacro
-
 long_description = open("description.txt").read()
 
 setup(
     name="fwmacro",
-    version=".".join([str(i) for i in fwmacro.__version__]),
+    version="0.9.4",
     description="Firewall macro compiler",
     long_description=long_description,
     classifiers=[
@@ -43,8 +40,8 @@ setup(
         "ip6tables",
     ],
     author="Kees Bos",
-    author_email="k.bos@zx.nl",
-    url="http://fwmacro.googlecode.com/",
+    author_email="k.bos@capitar.com",
+    url="https://github.com/keesbos/fwmacro",
     license="MIT",
     py_modules=["fwmacro"],
     packages=[],

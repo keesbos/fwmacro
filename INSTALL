@@ -5,9 +5,13 @@ fwmacro depends on plex and netaddr.
 
 
 Installation with easy_install:
-make
-sudo easy_install dist/fwmacro-*.egg
-sudo cp -r etc/fwmacro /etc
+	easy_install fwmacro
+or
+	easy_install https://github.com/keesbos/fwmacro/archive/master.zip
+or
+	make
+	sudo easy_install dist/fwmacro-*.egg
+	sudo cp -r etc/fwmacro /etc
 
 Note that the installation with easy_install will not install the manpages.
 

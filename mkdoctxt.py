@@ -4,10 +4,10 @@ import sys
 import fwmacro
 
 rule_syntax = "\n".join(
-    [ " %s" % line for line in fwmacro.rule_explanation.split("\n") ],
+    [" %s" % line for line in fwmacro.rule_explanation.split("\n")],
 )
 rule_defaults = "\n".join(
-    [ " %s" % line for line in fwmacro.rule_defaults_txt.split("\n") ],
+    [" %s" % line for line in fwmacro.rule_defaults_txt.split("\n")],
 )
 log_tag = fwmacro.FWPreprocess.logtag
 chains4_dir = fwmacro.CHAINSDIR_IPV4
