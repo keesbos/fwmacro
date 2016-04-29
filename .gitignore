@@ -14,12 +14,12 @@ etc/fwmacro/ipv6stop.rules
 
 distro/deb/debian/files
 distro/deb/debian/python-fwmacro.debhelper.log
+distro/deb/debian/python-fwmacro.substvars
 distro/deb/debian/python-fwmacro
+distro/python-fwmacro_*_all.deb
+distro/python-fwmacro_*.changes
 
 dist/
 build/
 fwmacro.egg-info/
-python-fwmacro_*_all.deb
-python-fwmacro_*.changes
-python
-
+fw
