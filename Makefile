@@ -33,5 +33,4 @@ deb-clean:
 	rm -f distro/python-fwmacro_*.changes
 
 pypi-upload: all
-	python setup.py bdist_egg upload
-	python setup.py sdist upload
+	twine upload dist/fwmacro-0.9.4-py2.7.egg 
