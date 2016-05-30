@@ -477,12 +477,12 @@ interface eth0:
         self.assertEquals(
             chains6["fwm-ifs"],
             [
-                '-t filter -o eth0 -p icmpv6 -m state --state NEW -A 101oeth0:ifs -j ACCEPT',
-                '-t filter -i eth0 -p icmpv6 -m state --state NEW -A 101ieth0:ifs -j RETURN --src 2001:470:15:80::3/128  --dst 2001:470:15:80::4/128',
-                '-t filter -i eth0 -p icmpv6 --icmpv6-type 0 -m state --state NEW -A 101ieth0:ifs -j RETURN --src 2001:470:15:80::3/128  --dst 2001:470:15:80::4/128',
-                '-t filter -i eth0 -p icmpv6 --icmpv6-type echo-reply -m state --state NEW -A 101ieth0:ifs -j RETURN --src 2001:470:15:80::3/128  --dst 2001:470:15:80::4/128',
-                '-t filter -i eth0 -p icmpv6 --icmpv6-type 3/0 -m state --state NEW -A 101ieth0:ifs -j RETURN --src 2001:470:15:80::3/128  --dst 2001:470:15:80::4/128',
-                '-t filter -i eth0 -p icmpv6 --icmpv6-type communication-prohibited -m state --state NEW -A 101ieth0:ifs -j RETURN --src 2001:470:15:80::3/128  --dst 2001:470:15:80::4/128',
+                '-t filter -o eth0 -p icmpv6 -A 101oeth0:ifs -j ACCEPT',
+                '-t filter -i eth0 -p icmpv6 -A 101ieth0:ifs -j RETURN --src 2001:470:15:80::3/128  --dst 2001:470:15:80::4/128',
+                '-t filter -i eth0 -p icmpv6 --icmpv6-type 0 -A 101ieth0:ifs -j RETURN --src 2001:470:15:80::3/128  --dst 2001:470:15:80::4/128',
+                '-t filter -i eth0 -p icmpv6 --icmpv6-type echo-reply -A 101ieth0:ifs -j RETURN --src 2001:470:15:80::3/128  --dst 2001:470:15:80::4/128',
+                '-t filter -i eth0 -p icmpv6 --icmpv6-type 3/0 -A 101ieth0:ifs -j RETURN --src 2001:470:15:80::3/128  --dst 2001:470:15:80::4/128',
+                '-t filter -i eth0 -p icmpv6 --icmpv6-type communication-prohibited -A 101ieth0:ifs -j RETURN --src 2001:470:15:80::3/128  --dst 2001:470:15:80::4/128',
             ],
         )
 
