@@ -529,7 +529,6 @@ class FWPreprocess(Scanner):
     comment = Str("#") + Rep(AnyBut("\n"))
     blank_line = indentation + Opt(comment) + lineterm
     ip4 = number + Any(".") + number + Any(".") + number + Any(".") + number
-    ip4 = number + Any(".") + number + Any(".") + number + Any(".") + number
     ip6number = Rep1(hexdigit) | ip4
     ip6 = Rep(ip6number + Any(":")) + ip6number
     ip6 = ip6 | Opt(ip6) + Str("::") + Opt(ip6)
@@ -571,7 +570,8 @@ class FWPreprocess(Scanner):
     layer3 = l3 + Rep(opt_space + Str(",") + opt_space + l3)
     layer4_range = (name | number) + Opt(opt_space + Str("-") + opt_space + (name | number))
     layer4 = layer4_range + Rep(opt_space + Str(",") + opt_space + layer4_range)
-    nat_layer3 = opt_space + ip4 + Opt(opt_space + Str("-") + opt_space + ip4)
+    #nat_layer3 = opt_space + ip4 + Opt(opt_space + Str("-") + opt_space + ip4)
+    nat_layer3 = opt_space + (ip4 | name) + Opt(opt_space + Str("-") + opt_space + (ip4 | name))
     nat_layer4 = Str("all") | (number + Opt(opt_space + Str("-") + opt_space + number))# + spaces
     log_levels = apply(Str, tuple(logging_levels))
 
@@ -654,6 +654,7 @@ class FWPreprocess(Scanner):
     chainsdir_ip6 = CHAINSDIR_IPV6
     chainname = "ifs"
     logtag = "%(iface)s-%(chainname)s-%(lineno)s-%(action)s"
+    force_groups = False
 
     def __init__(self, fname):
         if fname in [None, "-"]:
@@ -900,7 +901,29 @@ class FWPreprocess(Scanner):
                 self.begin("")
                 return None
             if token == "nat-layer3":
-                rule.nat = text.replace(" ", "")
+                text = text.replace(" ", "")
+                # test if it is a group and make sure it only contains one IP
+                if text in self.groups:
+                    if len(self.groups[text]) != 1:
+                        self.log_error("NAT group can only have 1 item")
+                    else:
+                        self.groups[text].resolve()
+                        text = str(self.groups[text].ips()[0]).split('/')[0]
+                elif self.force_groups:
+                    self.log_error("'%s' is not a NAT group" % text)
+                else:
+                    # Handle ip address / range
+                    text_elements = []
+                    for elem in text.split('-'):
+                        elem = elem.strip()
+                        try:
+                            text_elements.append(str(netaddr.IPAddress(elem)))
+                        except netaddr.core.AddrFormatError:
+                            self.log_error("Wrong NAT address '%s'" % elem)
+                    if len(text_elements) not in [1, 2]:
+                        self.log_error("Invalid NAT range '%s'" % text)
+                    text = '-'.join(text_elements)
+                rule.nat = text
             elif token == "state-end":
                 self.log_error("Invalid nat address")
                 self.begin("")
@@ -1033,6 +1056,10 @@ class FWPreprocess(Scanner):
             text = text.replace(" ", "")
             if text != "any":
                 for s in text.split():
+                    # Check if text is a group name
+                    for g in s.split(","):
+                        if self.force_groups and not g in self.groups:
+                            self.log_error("'%s' is not a group" % g)
                     if s in invalid_names:
                         self.log_error("Invalid source '%s'" % s)
             rule.sources += text.split(",")
@@ -1084,6 +1111,10 @@ class FWPreprocess(Scanner):
             text = text.replace(" ", "")
             if text != "any":
                 for s in text.split():
+                    # Check if text is a group name (see also source part)
+                    for g in s.split(","):
+                        if self.force_groups and not g in self.groups:
+                            self.log_error("'%s' is not a group" % g)
                     if s in invalid_names:
                         self.log_error("Invalid destination '%s'" % s)
             rule.destinations += text.split(",")
@@ -2007,6 +2038,14 @@ ICMPv6 options:
         default=FWPreprocess.logtag,
         help="log tag template (default: '%s')" % FWPreprocess.logtag,
     )
+    parser.add_option(
+        "--force-groups",
+        action="store_true",
+        dest="force_groups",
+        default=False,
+        help="Force the use of groups (default: '%s')" % False,
+    )
+
 
 
     opts, args = parser.parse_args()
@@ -2023,13 +2062,14 @@ ICMPv6 options:
     fwprepocess.chainsdir_ip4 = opts.chainsdir_ip4
     fwprepocess.chainsdir_ip6 = opts.chainsdir_ip6
     fwprepocess.logtag = opts.logtag
+    fwprepocess.force_groups = opts.force_groups
 
     try:
         fwprepocess.read_fwrules()
         fwprepocess.resolve()
         chains4, chains6 = fwprepocess.make_rules()
     except FWMacroException, e:
-        sys.stderr.write(e.log_message())
+        sys.stderr.write("%s\n" % (e.log_message(),))
         sys.exit(1)
     if fwprepocess.nerrors == 0:
         fwprepocess.write_rules(chains4, chains6)

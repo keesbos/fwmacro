@@ -1,6 +1,7 @@
 *.pyc
 *.swp
 *-stamp
+tags
 
 docs/fwmc.8
 docs/fwmc.txt
