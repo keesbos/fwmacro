@@ -1,2 +1,11 @@
+# Accept established and related packets
 -A 10stateful -mstate --state ESTABLISHED,RELATED -j ACCEPT
+# Drop all invalid packets
 -A 10stateful -mstate --state INVALID -j DROP
+
+# For vrrp (e.g. keepalived) uncomment the next lines
+# to accept vrrp packets:
+# -t filter -A 10IN-vrrp -p all -m state --state NEW -j ACCEPT --dst 224.0.0.18/32
+# -t filter -A 10OUT-vrrp -p all -m state --state NEW -j ACCEPT --dst 224.0.0.18/32
+# -t filter -A 10IN-vrrp -p all -m state --state NEW -j ACCEPT --dst 224.0.0.5/32
+# -t filter -A 10OUT-vrrp -p all -m state --state NEW -j ACCEPT --dst 224.0.0.5/32

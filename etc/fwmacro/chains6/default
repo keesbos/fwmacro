@@ -1,2 +1,8 @@
+# Accept established and related packets
 -A 10stateful -mstate --state ESTABLISHED,RELATED -j ACCEPT
+# Drop all invalid packets
 -A 10stateful -mstate --state INVALID -j DROP
+
+# Ipv6 depends on icmp. Here we allow all, but this should/could
+# be restricted to the required icmp types
+-A 10icmpv6 -p icmpv6 -j ACCEPT
