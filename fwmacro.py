@@ -5,8 +5,6 @@
 # Released under the MIT license. See LICENSE file for details.
 #
 
-__version__ = (0, 9, 3)
-
 import sys
 import socket
 import os
@@ -20,23 +18,41 @@ except:
     sys.stderr.write("""\
 Cannot import netaddr.
 Either:
-	easy_install netaddr
+\teasy_install netaddr
 or
-	install your distributions python-netaddr package
+\tinstall your distributions python-netaddr package
 """)
     raise
 try:
-    from plex import *
+    from plex import (
+        Any,
+        AnyBut,
+        AnyChar,
+        Empty,
+        Eof,
+        IGNORE,
+        Lexicon,
+        Opt,
+        Range,
+        Rep,
+        Rep1,
+        Scanner,
+        State,
+        Str,
+        TEXT,
+    )
 except:
     sys.stderr.write("""\
 Cannot import plex.
 Either:
-	easy_install plex
+\teasy_install plex
 or
-	install your distributions python-plex package
+\tinstall your distributions python-plex package
 """)
     raise
 
+
+__version__ = (0, 9, 5)
 
 BASEDIR = "/etc/fwmacro"
 CHAINSDIR_IPV4 = os.path.join(BASEDIR, "chains4")
@@ -46,7 +62,8 @@ CHAINSFILE_IPV6 = os.path.join(BASEDIR, "ipv6.rules")
 
 
 rule_explanation = """\
-DIRECTION ACTION [STATES] PROTOCOL OPTIONS SOURCE DESTINATION LOG [LOGLEVEL] [LOGNAME]
+DIRECTION ACTION [STATES] PROTOCOL OPTIONS SOURCE DESTINATION LOG [LOGLEVEL] \
+[LOGNAME]
 
 DIRECTION   := ["local"] "in" | "out"
 ACTION      := "permit" | "deny" | "snat" NATARGS | "dnat" NATARGS | "masq"
@@ -150,13 +167,14 @@ redirect
 """
 
 invalid_names = []
-reserved_words = ["group", "interface", "ruleset",
+reserved_words = [
+    "group", "interface", "ruleset",
     "local", "in", "out", "permit", "deny", "snat", "dnat", "masq",
-    "ip", "tcp", "udp", "icmp", "any", "all", 
-    "NONE", "ESTABLISHED", "NEW", "RELATED", "INVALID", 
+    "ip", "tcp", "udp", "icmp", "any", "all",
+    "NONE", "ESTABLISHED", "NEW", "RELATED", "INVALID",
     "ALL", "SYN", "ACK", "FIN", "RST", "URG", "PSH", "ALL", "syn", "flags",
     ]
-logging_levels = ["debug", "info", "notice", "warning", 
+logging_levels = ["debug", "info", "notice", "warning",
                   "err", "crit", "alert", "emerg"]
 invalid_names = invalid_names + reserved_words + logging_levels
 for txt in (icmp_options_txt, icmpv6_options_txt):
@@ -164,7 +182,7 @@ for txt in (icmp_options_txt, icmpv6_options_txt):
         line = line.strip().split()
         if line:
             line = line[0].strip()
-            if not line in invalid_names:
+            if line not in invalid_names:
                 invalid_names.append(line)
 
 default_log_level = "warning"
@@ -197,7 +215,8 @@ class FWGroupRedefinition(FWMacroException):
         self.group = group
 
     def log_message(self):
-        return "Redefinition of group '%s' defined at line %d" % (self.name, self.group.lineno)
+        return "Redefinition of group '%s' defined at line %d" % (
+            self.name, self.group.lineno)
 
 
 class FWRecursion(FWMacroException):
@@ -262,6 +281,7 @@ class FWInvalidParentChain(FWMacroException):
             self.table,
         )
 
+
 class FWReservedChainName(FWMacroException):
     def __init__(self, chain, fname, lineno):
         self.chain = chain
@@ -275,6 +295,7 @@ class FWReservedChainName(FWMacroException):
             self.lineno,
         )
 
+
 class FWOrderConflict(FWMacroException):
     def __init__(self, chain, fname, lineno, origdef):
         self.chain = chain
@@ -283,7 +304,10 @@ class FWOrderConflict(FWMacroException):
         self.origdef = origdef
 
     def log_message(self):
-        return "Order redefinition of chain '%s' at %s:%s (first defined at %s:%s)" % (
+        return (
+            "Order redefinition of chain '%s' at %s:%s "
+            "(first defined at %s:%s)"
+        ) % (
             self.chain,
             self.fname,
             self.lineno,
@@ -328,7 +352,8 @@ class Rule(object):
             direction_char = self.direction[0].lower()
         chainname = "%s%s:%s" % (direction_char, iface, chainname)
         if len(chainname) >= 30:
-            chainname = "%s%s:%d%s" % (iface, direction_char, chainnr, chainname)
+            chainname = "%s%s:%d%s" % (
+                iface, direction_char, chainnr, chainname)
             chainname = chainname[:29]
         return chainname
 
@@ -347,7 +372,7 @@ class Group(list):
         self.referred_lines = []
 
     def resolve(self):
-        if not self.cached.has_key(self.name):
+        if self.name not in self.cached:
             self.cached[self.name] = self
         if self.resolved is False:
             raise FWRecursion([self])
@@ -367,12 +392,12 @@ class Group(list):
                     else:
                         ipv6 = [obj]
                 for ip in ipv4:
-                    if not ip in self.ipv4:
+                    if ip not in self.ipv4:
                         if ip.network != ip.ip:
                             raise FWIPMaskBoundaryError(ip, self.lineno)
                         self.ipv4.append(ip)
                 for ip in ipv6:
-                    if not ip in self.ipv6:
+                    if ip not in self.ipv6:
                         if ip.network != ip.ip:
                             raise FWIPMaskBoundaryError(ip, self.lineno)
                         self.ipv6.append(ip)
@@ -389,7 +414,7 @@ class Group(list):
 class Hostname(Group):
 
     def resolve(self):
-        if not self.cached.has_key(self.name):
+        if self.name not in self.cached:
             self.cached[self.name] = self
         if self.resolved is None:
             self.resolved = False
@@ -403,10 +428,10 @@ class Hostname(Group):
                 ip = netaddr.IPAddress(ainfo[4][0])
                 ip = netaddr.IPNetwork(ip)
                 if ip.version == 4:
-                    if not ip in self.ipv4:
+                    if ip not in self.ipv4:
                         self.ipv4.append(ip)
                 else:
-                    if not ip in self.ipv6:
+                    if ip not in self.ipv6:
                         self.ipv6.append(ip)
         self.resolved = True
         self.ipv4.sort()
@@ -417,7 +442,7 @@ class Hostname(Group):
 class FWPreprocess(Scanner):
 
     #
-    # First the methods that implement the grammar and scanning 
+    # First the methods that implement the grammar and scanning
     # of the source file.
     #
 
@@ -436,7 +461,7 @@ class FWPreprocess(Scanner):
             if self.indentation_char is None:
                 self.indentation_char = c
             else:
-                if self.indentation_char <> c:
+                if self.indentation_char != c:
                     self.log_error("Mixed up tabs and spaces!")
         # Figure out how many indents/dedents to do
         current_level = self.current_level()
@@ -456,7 +481,7 @@ class FWPreprocess(Scanner):
         while new_level < self.current_level():
             del self.indentation_stack[-1]
             self.produce("DEDENT", "")
-        if new_level <> self.current_level():
+        if new_level != self.current_level():
             self.log_error("Indentation error")
 
     def eof(self):
@@ -482,11 +507,12 @@ class FWPreprocess(Scanner):
         self.begin("icmp")
         return "icmp"
 
-    resword = Str("group", "interface", "ruleset",
-                  "local", "in", "out", 
-                  "permit", "deny", "snat", "dnat", "masq",
-                  "log", 
-                 )
+    resword = Str(
+        "group", "interface", "ruleset",
+        "local", "in", "out",
+        "permit", "deny", "snat", "dnat", "masq",
+        "log",
+    )
     resword = apply(Str, tuple(reserved_words))
     letter = Range("AZaz") | Any("_")
     digit = Range("09")
@@ -534,13 +560,15 @@ class FWPreprocess(Scanner):
     ip6 = ip6 | Opt(ip6) + Str("::") + Opt(ip6)
     hostname = name + Rep(Any(".") + name)
     conn_state = Str("ESTABLISHED", "NEW", "RELATED", "INVALID", "NONE")
-    conn_states = conn_state + Rep(Opt(Any(" \t")) + Str(",") + Opt(Any(" \t")) + conn_state)
+    conn_states = conn_state + Rep(
+        Opt(Any(" \t")) + Str(",") + Opt(Any(" \t")) + conn_state)
     conn_states = conn_state + Rep(comma_sep + conn_state)
     tcp_syn = Opt(Str("!") + opt_space) + Str("syn")
     tcp__flags = Str("NONE")
-    for f in ["SYN","ACK","FIN","RST","URG","PSH","ALL"]:
+    for f in ["SYN", "ACK", "FIN", "RST", "URG", "PSH", "ALL"]:
         tcp__flags |= Str(f)
-    tcp_flags = Opt(Str("!") + opt_space) + tcp__flags + Rep(comma_sep + tcp__flags)
+    tcp_flags = Opt(Str("!") + opt_space) + tcp__flags + Rep(
+        comma_sep + tcp__flags)
     icmp_types = None
     icmp_type_names = []
     icmpv4_type_names = []
@@ -551,28 +579,34 @@ class FWPreprocess(Scanner):
     ):
         for n in txt.split("\n"):
             n = n.split("(")[0].strip()
-            if not n: continue
-            if not n in lst:
+            if not n:
+                continue
+            if n not in lst:
                 lst.append(n)
-            if not n in icmp_type_names:
+            if n not in icmp_type_names:
                 icmp_type_names.append(n)
                 if icmp_types is None:
                     icmp_types = Str(n)
                 else:
                     icmp_types |= Str(n)
-    icmp_type = number + Opt(opt_space + Str("/") + opt_space + number) + spaces
+    icmp_type = number + Opt(
+        opt_space + Str("/") + opt_space + number) + spaces
     icmp_type = (icmp_type | icmp_types)
     l3_mask = opt_space + Str("/") + opt_space + (number | ip4 | ip6)
     l3_hostname = Opt(Str("!") + opt_space) + hostname
     l3_ip = Opt(Str("!") + opt_space) + (ip4 | ip6) + Opt(l3_mask)
     l3_name = Opt(Str("!") + opt_space) + name
-    l3 = Opt(Str("!") + opt_space) + (((ip4 | ip6) + Opt(l3_mask)) | name | hostname)
+    l3 = Opt(Str("!") + opt_space) + (
+        ((ip4 | ip6) + Opt(l3_mask)) | name | hostname)
     layer3 = l3 + Rep(opt_space + Str(",") + opt_space + l3)
-    layer4_range = (name | number) + Opt(opt_space + Str("-") + opt_space + (name | number))
-    layer4 = layer4_range + Rep(opt_space + Str(",") + opt_space + layer4_range)
-    #nat_layer3 = opt_space + ip4 + Opt(opt_space + Str("-") + opt_space + ip4)
-    nat_layer3 = opt_space + (ip4 | name) + Opt(opt_space + Str("-") + opt_space + (ip4 | name))
-    nat_layer4 = Str("all") | (number + Opt(opt_space + Str("-") + opt_space + number))# + spaces
+    layer4_range = (name | number) + Opt(
+        opt_space + Str("-") + opt_space + (name | number))
+    layer4 = layer4_range + Rep(
+        opt_space + Str(",") + opt_space + layer4_range)
+    nat_layer3 = opt_space + (ip4 | name) + Opt(
+        opt_space + Str("-") + opt_space + (ip4 | name))
+    nat_layer4 = Str("all") | (
+        number + Opt(opt_space + Str("-") + opt_space + number))  # + spaces
     log_levels = apply(Str, tuple(logging_levels))
 
     lexicon = Lexicon([
@@ -677,7 +711,7 @@ class FWPreprocess(Scanner):
         self.rulesets = {}
         self.addrinfos = {}
         self.protocols = self.read_protocols()
-        group =  Group("any", 0)
+        group = Group("any", 0)
         self.any_ipv4 = netaddr.IPNetwork("0.0.0.0/0")
         self.any_ipv6 = netaddr.IPNetwork("::/0")
         group.append(self.any_ipv4)
@@ -713,7 +747,7 @@ class FWPreprocess(Scanner):
     def log(self, level, msg):
         sys.stderr.write("%s\n" % msg)
 
-    def log_error(self, msg, lineno = None):
+    def log_error(self, msg, lineno=None):
         if self.nerrors > 10:
             sys.exit(1)
         self.nerrors += 1
@@ -727,7 +761,7 @@ class FWPreprocess(Scanner):
                 return
         self.log(syslog.LOG_ERR, "%s" % msg)
 
-    def log_warning(self, msg, lineno = None):
+    def log_warning(self, msg, lineno=None):
         self.nwarnings += 1
         if lineno is not None:
             self.log(syslog.LOG_WARNING, "line %d, %s" % (lineno, msg))
@@ -735,17 +769,18 @@ class FWPreprocess(Scanner):
         p = self.position()
         if p:
             if p[1]:
-                self.log(syslog.LOG_WARNING, "line %d:%d, %s" % (p[1], p[2], msg))
+                self.log(syslog.LOG_WARNING, "line %d:%d, %s" % (
+                    p[1], p[2], msg))
                 return
         self.log(syslog.LOG_WARNING, "%s" % msg)
 
-    def skip_this_line(self, token = None, text = None):
+    def skip_this_line(self, token=None, text=None):
         """Ignore all remaning tokens of the current line"""
         while token != "newline":
             token, text = self.read()
         return token, text
 
-    def validate_ports(self, ports, proto = "", lineno = None):
+    def validate_ports(self, ports, proto="", lineno=None):
         """Check ports for valid names/ranges"""
         ports = ports.replace(" ", "").lower()
         if ports == "all":
@@ -792,7 +827,7 @@ class FWPreprocess(Scanner):
         if token != "name":
             self.log_error("Identifier excpected, got '%s'" % token)
         groupname = text
-        if self.groups.has_key(text):
+        if text in self.groups:
             group = self.groups[groupname]
             if group.lineno is not None:
                 e = FWGroupRedefinition(text, self.lineno, group)
@@ -817,7 +852,7 @@ class FWPreprocess(Scanner):
             if token == "DEDENT":
                 break
             if token == "ip4":
-                name = text 
+                name = text
                 token, text = self.read()
                 if token == "/":
                     token, text = self.read()
@@ -850,7 +885,7 @@ class FWPreprocess(Scanner):
                 name = text
                 token, text = self.read()
                 if token == "newline":
-                    if not self.groups.has_key(name):
+                    if name not in self.groups:
                         self.groups[name] = Hostname(name, None)
                     self.groups[name].referred_lines.append(self.position()[1])
                     group.append(self.groups[name])
@@ -859,7 +894,7 @@ class FWPreprocess(Scanner):
                 name = text
                 token, text = self.read()
                 if token == "newline":
-                    if not self.groups.has_key(name):
+                    if name not in self.groups:
                         self.groups[name] = Group(name, None)
                     self.groups[name].referred_lines.append(self.position()[1])
                     group.append(self.groups[name])
@@ -875,14 +910,14 @@ class FWPreprocess(Scanner):
         if direction == "local":
             is_local = True
             token, text = self.read()
-            if not token in ["in", "out"]:
+            if token not in ["in", "out"]:
                 self.log_error("Invalid direction '%s'" % text)
                 token, text = self.skip_this_line()
                 return None
             direction = token
         rule = Rule(self.position()[1], is_local, direction)
         token, text = self.read()
-        if not token in ["permit", "deny", "snat", "dnat", "masq"]:
+        if token not in ["permit", "deny", "snat", "dnat", "masq"]:
             self.log_error("Invalid action '%s'" % text)
             token, text = self.skip_this_line()
             return None
@@ -966,7 +1001,8 @@ class FWPreprocess(Scanner):
             else:
                 rule.state = ""
                 if text != "NONE":
-                    self.log_error("Cannot combine state NONE with other states")
+                    self.log_error(
+                        "Cannot combine state NONE with other states")
         elif token == "state-end":
             pass
 
@@ -977,7 +1013,7 @@ class FWPreprocess(Scanner):
             token, text = self.read()
         else:
             invert = ""
-        if not token in ["ip", "all", "icmp", "tcp", "udp", "number"]:
+        if token not in ["ip", "all", "icmp", "tcp", "udp", "number"]:
             if text in self.protocols:
                 token = "number"
                 text = self.protocols[text]
@@ -988,12 +1024,18 @@ class FWPreprocess(Scanner):
         if rule.action in ["dnat"]:
             if token in ["tcp", "udp"]:
                 if not rule.natports:
-                    self.log_error("Specific ports needed in nat definition (when using tcp or udp match condition)")
+                    self.log_error(
+                        "Specific ports needed in nat definition "
+                        "(when using tcp or udp match condition)"
+                    )
                     token, text = self.skip_this_line()
                     return None
             else:
                 if rule.natports:
-                    self.log_error("Ports not used in nat definition (use tcp or udp match condition)")
+                    self.log_error(
+                        "Ports not used in nat definition "
+                        "(use tcp or udp match condition)"
+                    )
                     token, text = self.skip_this_line()
                     return None
 
@@ -1044,7 +1086,6 @@ class FWPreprocess(Scanner):
                 self.skip_this_line()
                 return None
 
-            
         # Now get the source
         self.begin("layer3")
         token, text = self.read()
@@ -1058,7 +1099,7 @@ class FWPreprocess(Scanner):
                 for s in text.split():
                     # Check if text is a group name
                     for g in s.split(","):
-                        if self.force_groups and not g in self.groups:
+                        if self.force_groups and g not in self.groups:
                             self.log_error("'%s' is not a group" % g)
                     if s in invalid_names:
                         self.log_error("Invalid source '%s'" % s)
@@ -1073,7 +1114,7 @@ class FWPreprocess(Scanner):
             self.begin("")
             self.skip_this_line()
             return None
-        
+
         if rule.protocol in ["tcp", "udp"]:
             self.begin("layer4")
             # Get source ports
@@ -1099,7 +1140,7 @@ class FWPreprocess(Scanner):
                 self.begin("")
                 self.skip_this_line()
                 return None
-        
+
         # Now get the destination
         self.begin("layer3")
         token, text = self.read()
@@ -1113,7 +1154,7 @@ class FWPreprocess(Scanner):
                 for s in text.split():
                     # Check if text is a group name (see also source part)
                     for g in s.split(","):
-                        if self.force_groups and not g in self.groups:
+                        if self.force_groups and g not in self.groups:
                             self.log_error("'%s' is not a group" % g)
                     if s in invalid_names:
                         self.log_error("Invalid destination '%s'" % s)
@@ -1128,7 +1169,7 @@ class FWPreprocess(Scanner):
             self.begin("")
             self.skip_this_line()
             return None
-        
+
         if rule.protocol in ["tcp", "udp"]:
             self.begin("layer4")
             # Get destination ports
@@ -1154,7 +1195,7 @@ class FWPreprocess(Scanner):
                 self.begin("")
                 self.skip_this_line()
                 return None
-        
+
         self.begin("")
         # Check for logging
         token, text = self.read()
@@ -1165,18 +1206,18 @@ class FWPreprocess(Scanner):
                 rule.logging = text
                 token, text = self.read()
             if token != "newline":
-                if not text in logging_levels:
+                if text not in logging_levels:
                     rule.logname = text
                 else:
                     self.log_error("Invalid logname: %s" % text)
                     self.begin("")
                     self.skip_this_line()
                     return None
-        
+
         # Done (should ...)
         if token == "newline":
             return rule
-        
+
         self.log_error("Garbage at end of line: '%s'" % text)
         token, text = self.skip_this_line()
         return None
@@ -1186,10 +1227,10 @@ class FWPreprocess(Scanner):
         rules = []
         while 1:
             token, text = self.read()
+            lineno = self.position()[1]
             if token == "DEDENT":
                 break
             elif token in ["local", "in", "out"]:
-                lineno = self.position()[1]
                 rule = self.get_rule(token)
                 rules.append(rule)
                 continue
@@ -1198,19 +1239,19 @@ class FWPreprocess(Scanner):
                 if token != "name":
                     self.log_error("Identifier excpected, got '%s'" % token)
                 else:
-                    if self.rulesets.has_key(text):
+                    if text in self.rulesets:
                         rules = rules + self.rulesets[text]
                     else:
-                        self.log_error("Undefined ruleset '%s'" % text)
+                        self.log_error("Undefined ruleset '%s'" % text, lineno)
             else:
-                self.log_error("Unexpected '%s'" % text)
+                self.log_error("Unexpected '%s'" % text, lineno)
                 self.skip_this_line()
                 continue
             token, text = self.read()
             if token == "newline":
                 pass
             else:
-                self.log_error("Unexpected '%s'" % text)
+                self.log_error("Unexpected '%s'" % text, lineno)
         return rules
 
     def get_ruleset(self, level):
@@ -1218,7 +1259,7 @@ class FWPreprocess(Scanner):
         token, text = self.read()
         if token != "name":
             self.log_error("Identifier excpected, got '%s'" % token)
-        if self.rulesets.has_key(text):
+        if text in self.rulesets:
             self.log_error("Duplicate ruleset definition %s" % text)
         ruleset_name = text
         self.rulesets[ruleset_name] = []
@@ -1238,11 +1279,10 @@ class FWPreprocess(Scanner):
         token, text = self.read()
         if token != "name":
             self.log_error("Identifier excpected, got '%s'" % token)
-        if self.ifaces.has_key(text):
+        if text in self.ifaces:
             self.log_error("Duplicate interface definition %s" % text)
         if len(text) > 25:
             self.log_error("Interface name too long")
-        iface = []
         chains = {}
         ifacename = text
         self.chainorder[ifacename] = []
@@ -1267,7 +1307,7 @@ class FWPreprocess(Scanner):
             if token == "DEDENT":
                 break
             elif token in ["local", "in", "out"]:
-                lineno = self.position()[1]
+                # lineno = self.position()[1]
                 rule = self.get_rule(token)
                 chains[chainname].append(rule)
                 continue
@@ -1276,8 +1316,8 @@ class FWPreprocess(Scanner):
                 if token != "name":
                     self.log_error("Identifier excpected")
                 else:
-                    if self.rulesets.has_key(text):
-                        chains[chainname] = chains[chainname] + self.rulesets[text]
+                    if text in self.rulesets:
+                        chains[chainname] += self.rulesets[text]
                     else:
                         self.log_error("Undefined ruleset '%s'" % text)
             else:
@@ -1305,16 +1345,16 @@ class FWPreprocess(Scanner):
             elif token == "DEDENT":
                 level = level - 1
             if token == "group":
-                 self.get_group(level)
+                self.get_group(level)
             elif token == "ruleset":
-                 self.get_ruleset(level)
+                self.get_ruleset(level)
             elif token == "interface":
-                 self.get_interface(level)
-            indent = " " * (level * 4)
-            if not text or token == text:
-                value = token
-            else:
-                value = "%s(%s)" % (token, repr(text))
+                self.get_interface(level)
+            # indent = " " * (level * 4)
+            # if not text or token == text:
+            #     value = token
+            # else:
+            #     value = "%s(%s)" % (token, repr(text))
         # Just for some consistancy (e.g. unittest)
         for group in self.groups.itervalues():
             group.sort()
@@ -1336,10 +1376,11 @@ class FWPreprocess(Scanner):
             try:
                 ip = netaddr.IPNetwork(name)
                 if ip.network != ip.ip:
-                    self.log_error(FWIPMaskBoundaryError(ip, rule.lineno).log_message())
+                    self.log_error(
+                        FWIPMaskBoundaryError(ip, rule.lineno).log_message())
                 ips = [ip]
             except netaddr.core.AddrFormatError, e:
-                if self.groups.has_key(name) and \
+                if name in self.groups and \
                    self.groups[name].lineno is not None:
                     ips = self.groups[name].ips()
                 elif name.find(".") != -1:
@@ -1354,7 +1395,7 @@ class FWPreprocess(Scanner):
                     self.log_error(e.log_message(), e.lineno)
             for ip in ips:
                 ipinfo = (ip.prefixlen, ip, invert)
-                if not ipinfo in all_ip:
+                if ipinfo not in all_ip:
                     all_ip.append((ip.prefixlen, ip, invert))
         all_ip.sort()
         all_ip.reverse()
@@ -1363,24 +1404,23 @@ class FWPreprocess(Scanner):
             if last_ip is not None:
                 if last_ip == ip:
                     if last_invert != invert:
-                        self.log_error("Conflicting definitions (%s/%s, !%s,%s)" % (addr, mask, addr, mask), rule.lineno)
+                        self.log_error(
+                            "Conflicting definitions (%s, !%s,%s)" % (
+                                ip, invert, last_invert), rule.lineno)
                     continue
             last_ip = ip
             last_invert = invert
             for target_ip, target_invert in all_targets:
                 if (
-                    target_ip.size != 1
-                    and (
-                        (target_ip[0] >= ip[0] and target_ip[0] <= ip[-1])
-                        or
-                        (target_ip[-1] >= ip[0] and target_ip[1] <= ip[-1])
-                        or
-                        (ip[0] >= target_ip[0] and ip[0] <= target_ip[-1])
-                        or
+                    target_ip.size != 1 and (
+                        (target_ip[0] >= ip[0] and target_ip[0] <= ip[-1]) or
+                        (target_ip[-1] >= ip[0] and target_ip[1] <= ip[-1]) or
+                        (ip[0] >= target_ip[0] and ip[0] <= target_ip[-1]) or
                         (ip[-1] >= target_ip[0] and ip[-1] <= target_ip[-1])
                     )
-                   ):
-                    self.log_warning("Overlapping ranges (%s, %s)" % (ip, target_ip), rule.lineno)
+                ):
+                    self.log_warning("Overlapping ranges (%s, %s)" % (
+                        ip, target_ip), rule.lineno)
             all_targets.append((ip, invert))
             if ip.version == 4:
                 all_ip4.append((invert, ip))
@@ -1426,7 +1466,8 @@ class FWPreprocess(Scanner):
                 pib = all_raw[0][2]
                 if p1b <= p2a + 1:
                     if pia != pib:
-                        self.log_error("Conflicting port definition", rule.lineno)
+                        self.log_error(
+                            "Conflicting port definition", rule.lineno)
                         break
                     if p2a < p2b:
                         p2a = p2b
@@ -1438,8 +1479,9 @@ class FWPreprocess(Scanner):
         range_ports = []
         for p1, p2, invert in all:
             if invert and len(all) > 1:
-                self.log_error("Cannot use '!' on multiple port definitions", rule.lineno)
-                return [],[]
+                self.log_error(
+                    "Cannot use '!' on multiple port definitions", rule.lineno)
+                return [], []
             if p1 == p2:
                 if not invert:
                     if len(all) == 1:
@@ -1482,7 +1524,8 @@ class FWPreprocess(Scanner):
     def make_rule(self, chainnr, chainname, iface, rule):
         if not rule:
             if self.nerrors == 0:
-                self.log_error("Invalid rule in interface %s: %s" % (iface, chainname))
+                self.log_error("Invalid rule in interface %s: %s" % (
+                    iface, chainname))
             return "", ""
         # Get all source ips
         srcs_ip4, srcs_ip6 = self.resolve_ip(rule.sources, rule)
@@ -1496,12 +1539,13 @@ class FWPreprocess(Scanner):
         if srcs_ip6 and not dsts_ip6:
             srcs_ip6 = self.purge_default(srcs_ip6)
         if (
-            (srcs_ip4 and not dsts_ip4) or 
-            (dsts_ip4 and not srcs_ip4) or 
-            (srcs_ip6 and not dsts_ip6) or 
+            (srcs_ip4 and not dsts_ip4) or
+            (dsts_ip4 and not srcs_ip4) or
+            (srcs_ip6 and not dsts_ip6) or
             (dsts_ip6 and not srcs_ip6)
         ):
-            self.log_error("Cannot mix IPv4 and IPv6 source and destination", rule.lineno)
+            self.log_error(
+                "Cannot mix IPv4 and IPv6 source and destination", rule.lineno)
         lines_ip4 = []
         lines_ip6 = []
         line_ipv4 = []
@@ -1515,10 +1559,14 @@ class FWPreprocess(Scanner):
                 all = netaddr.IPNetwork("::/0")
                 for src in srcs_ip6:
                     if src[1] != all:
-                        self.log_warning("Ignoring %s rule for IPv6 source address %s" % (rule.action, src), rule.lineno)
+                        self.log_warning(
+                            "Ignoring %s rule for IPv6 source address %s" % (
+                                rule.action, src), rule.lineno)
                 for dst in dsts_ip6:
                     if dst[1] != all:
-                        self.log_warning("Ignoring %s rule for IPv6 destination address %s" % (rule.action, dst), rule.lineno)
+                        self.log_warning((
+                            "Ignoring %s rule for IPv6 destination "
+                            "address %s") % (rule.action, dst), rule.lineno)
         else:
             line_ipv4 += ["-t filter"]
             line_ipv6 += ["-t filter"]
@@ -1532,7 +1580,9 @@ class FWPreprocess(Scanner):
             if len(s) > 27:
                 s = s[:20] + "..." + s[-5:]
             # iptables-restore needs strings in "" and not ''
-            targets.append('LOG --log-prefix "%s " --log-level %s -m limit --limit 60/minute --limit-burst 10' % (s, rule.logging))
+            targets.append((
+                'LOG --log-prefix "%s " --log-level %s -m limit '
+                '--limit 60/minute --limit-burst 10') % (s, rule.logging))
         if rule.direction == "in":
             line_ipv4 += ["-i", iface]
             line_ipv6 += ["-i", iface]
@@ -1540,7 +1590,8 @@ class FWPreprocess(Scanner):
             line_ipv4 += ["-o", iface]
             line_ipv6 += ["-o", iface]
         else:
-            self.log_error("Invalid direction '%s'" % rule.direction, rule.lineno)
+            self.log_error(
+                "Invalid direction '%s'" % rule.direction, rule.lineno)
         chainname = rule.chainname(chainnr, chainname, iface)
         line_ipv4 += ["-p", rule.protocol]
         if rule.protocol == 'icmp':
@@ -1548,23 +1599,31 @@ class FWPreprocess(Scanner):
         else:
             line_ipv6 += ["-p", rule.protocol]
         for icmp_type in rule.icmp:
-            if not icmp_type in self.icmp_type_names:
+            if icmp_type not in self.icmp_type_names:
                 # Should be number[/code]
                 line_ipv4 += ['--icmp-type', icmp_type]
                 line_ipv6 += ['--icmpv6-type', icmp_type]
             else:
                 if icmp_type in self.icmpv4_type_names:
-                    if not srcs_ip4 and not icmp_type in self.icmpv6_type_names:
+                    if (
+                        not srcs_ip4 and
+                        icmp_type not in self.icmpv6_type_names
+                    ):
                         self.log_error(
-                            "Cannot use IPv4 icmp type %s in IPv6 rule" % icmp_type,
+                            "Cannot use IPv4 icmp type %s in IPv6 rule" % (
+                                icmp_type,),
                             rule.lineno,
                         )
                     else:
                         line_ipv4 += ['--icmp-type', icmp_type]
                 if icmp_type in self.icmpv6_type_names:
-                    if not srcs_ip6 and not icmp_type in self.icmpv4_type_names:
+                    if (
+                        not srcs_ip6 and
+                        icmp_type not in self.icmpv4_type_names
+                    ):
                         self.log_error(
-                            "Cannot use IPv6 icmp type %s in IPv4 rule" % icmp_type,
+                            "Cannot use IPv6 icmp type %s in IPv4 rule" % (
+                                icmp_type,),
                             rule.lineno,
                         )
                     else:
@@ -1608,11 +1667,13 @@ class FWPreprocess(Scanner):
         line_ipv4_start = " ".join(line_ipv4)
         line_ipv6_start = " ".join(line_ipv6)
         # Get all src ports (two lists: ranges and comma sep)
-        src_comma_ports, src_range_ports = self.resolve_ports(rule.srcports, rule)
+        src_comma_ports, src_range_ports = self.resolve_ports(
+            rule.srcports, rule)
         # Get all destination ips
         destinations = self.resolve_ip(rule.destinations, rule)
         # Get all dst ports (two lists: ranges and comma sep)
-        dst_comma_ports, dst_range_ports = self.resolve_ports(rule.dstports, rule)
+        dst_comma_ports, dst_range_ports = self.resolve_ports(
+            rule.dstports, rule)
         if rule.nat:
             sources = srcs_ip4
             destinations = dsts_ip4
@@ -1629,7 +1690,8 @@ class FWPreprocess(Scanner):
             if src_ip.prefixlen == 0:
                 src = ""
             else:
-                src = "--src %s%s/%s" % (src_invert, src_ip.ip, src_ip.prefixlen)
+                src = "--src %s%s/%s" % (
+                    src_invert, src_ip.ip, src_ip.prefixlen)
             for dst_invert, dst_ip in destinations:
                 if rule.nat and src_ip.version != 4:
                     continue
@@ -1638,29 +1700,49 @@ class FWPreprocess(Scanner):
                 if dst_ip.prefixlen == 0:
                     dst = ""
                 else:
-                    dst = "--dst %s%s/%s" % (dst_invert, dst_ip.ip, dst_ip.prefixlen)
+                    dst = "--dst %s%s/%s" % (
+                        dst_invert, dst_ip.ip, dst_ip.prefixlen)
                 for sport in src_comma_ports:
                     for dport in dst_comma_ports:
                         for target in targets:
-                            lines.append(" ".join([line_start % {"target": target}, src, "-m multiport --sports", sport, dst, "-m multiport --dports", dport]))
+                            lines.append(" ".join([
+                                line_start % {"target": target},
+                                src, "-m multiport --sports", sport,
+                                dst, "-m multiport --dports", dport,
+                            ]))
                     for dport in dst_range_ports:
                         if dport != "":
                             dport = "--dport %s" % dport
                         for target in targets:
-                            lines.append(" ".join([line_start % {"target": target}, src, "-m multiport --sports", sport, dst, dport]))
+                            lines.append(" ".join([
+                                line_start % {"target": target},
+                                src, "-m multiport --sports", sport,
+                                dst, dport,
+                            ]))
                 for sport in src_range_ports:
                     if sport != "":
                         sport = "--sport %s" % sport
                     for dport in dst_comma_ports:
                         for target in targets:
-                            lines.append(" ".join([line_start % {"target": target}, src, sport, dst, "-m multiport --dports", dport]))
+                            lines.append(" ".join([
+                                line_start % {"target": target},
+                                src, sport,
+                                dst, "-m multiport --dports", dport,
+                            ]))
                     for dport in dst_range_ports:
                         if dport != "":
                             dport = "--dport %s" % dport
                         for target in targets:
-                            lines.append(" ".join([line_start % {"target": target}, src, sport, dst, dport]))
-        return [line.strip() for line in lines_ip4], [line.strip() for line in lines_ip6]
-            
+                            lines.append(" ".join([
+                                line_start % {"target": target},
+                                src, sport,
+                                dst, dport,
+                            ]))
+        return [
+            line.strip() for line in lines_ip4
+        ], [
+            line.strip() for line in lines_ip6
+        ]
 
     def make_rules(self):
         chains4 = {}
@@ -1674,16 +1756,16 @@ class FWPreprocess(Scanner):
                 lines_ip4 = []
                 lines_ip6 = []
                 filename = "fwm-%s" % chain
-                i = 0
                 for rule in self.ifaces[iface][chain]:
-                    rule_ip4, rule_ip6 = self.make_rule(chain_idx, chain, iface, rule)
+                    rule_ip4, rule_ip6 = self.make_rule(
+                        chain_idx, chain, iface, rule)
                     lines_ip4 += rule_ip4
                     lines_ip6 += rule_ip6
-                if chains4.has_key(filename):
+                if filename in chains4:
                     chains4[filename] += lines_ip4
                 else:
                     chains4[filename] = lines_ip4
-                if chains6.has_key(filename):
+                if filename in chains6:
                     chains6[filename] += lines_ip6
                 else:
                     chains6[filename] = lines_ip6
@@ -1692,12 +1774,18 @@ class FWPreprocess(Scanner):
     def write_rules(self, chains4, chains6):
         if self.nerrors != 0:
             return
-        for chainsdir, chains in [(self.chainsdir_ip4, chains4), (self.chainsdir_ip6, chains6)]:
+        for chainsdir, chains in [
+            (self.chainsdir_ip4, chains4),
+            (self.chainsdir_ip6, chains6),
+        ]:
             if not os.path.isdir(chainsdir):
                 self.log_error("Not a directory: %s" % chainsdir)
         if self.nerrors != 0:
             return
-        for chainsdir, chains in [(self.chainsdir_ip4, chains4), (self.chainsdir_ip6, chains6)]:
+        for chainsdir, chains in [
+            (self.chainsdir_ip4, chains4),
+            (self.chainsdir_ip6, chains6),
+        ]:
             chains_keys = chains.keys()
             chains_keys.sort()
             for chainname in chains_keys:
@@ -1707,11 +1795,12 @@ class FWPreprocess(Scanner):
                     fp.write("%s\n" % "\n".join(chains[chainname]))
                     fp.close()
                 except IOError, why:
-                    self.log_error("Error writing file '%s': %s" % (fname, why))
+                    self.log_error(
+                        "Error writing file '%s': %s" % (fname, why))
             for fname in os.listdir(chainsdir):
                 if fname[:4] != "fwm-":
                     continue
-                if not chains.has_key(fname):
+                if fname not in chains:
                     os.unlink("%s/%s" % (chainsdir, fname))
 
 
@@ -1722,9 +1811,9 @@ class FWCompile(object):
 
     reserved_targets = [
         # Always there
-        "ACCEPT", 
-        "DROP", 
-        "QUEUE", 
+        "ACCEPT",
+        "DROP",
+        "QUEUE",
         "RETURN",
 
         # Target extensions
@@ -1775,10 +1864,7 @@ class FWCompile(object):
         "raw": ["PREROUTING", "OUTPUT"],
     }
 
-    def __init__(self, 
-                 remove_all_chains=False,
-                 verbose=False,
-                ):
+    def __init__(self, remove_all_chains=False, verbose=False):
         self.remove_all_chains = remove_all_chains
         self.verbose = verbose
         self.nerrors = 0
@@ -1792,7 +1878,7 @@ class FWCompile(object):
     def log(self, level, msg):
         sys.stderr.write("%s\n" % msg)
 
-    def log_error(self, msg, lineno = None):
+    def log_error(self, msg, lineno=None):
         if self.nerrors > 10:
             sys.exit(1)
         self.nerrors += 1
@@ -1801,7 +1887,7 @@ class FWCompile(object):
             return
         self.log(syslog.LOG_ERR, "%s" % msg)
 
-    def log_warning(self, msg, lineno = None):
+    def log_warning(self, msg, lineno=None):
         self.nwarnings += 1
         if lineno is not None:
             self.log(syslog.LOG_WARNING, "line %d, %s" % (lineno, msg))
@@ -1823,7 +1909,7 @@ class FWCompile(object):
         elif short == "POST":
             parentchains = ["POSTROUTING"]
         if len(parentchains) == 1 and \
-           not parentchains[0] in self.builtin_chains[table]:
+           parentchains[0] not in self.builtin_chains[table]:
             raise FWInvalidParentChain(table, chain)
         if table == "filter":
             if match.group(2):
@@ -1900,19 +1986,20 @@ class FWCompile(object):
                             newchain = "%s%s" % (m.group(2), m.group(3))
                         else:
                             newchain = m.group(3)
-                        line = line.replace("-A %s" % chain, "-A %s" % newchain)
+                        line = line.replace(
+                            "-A %s" % chain, "-A %s" % newchain)
                         chain = newchain
                     if chain in self.reserved_chains[table]:
                         raise FWReservedChainName(chain, fname, linenr)
-                    if not self.filechains[fname][table].has_key(chain):
+                    if chain not in self.filechains[fname][table]:
                         self.filechains[fname][table][chain] = []
                     self.filechains[fname][table][chain].append(line)
                     self.newchains[table][(num, chain)] = 1
-                    if not chain in chainorder[table]:
+                    if chain not in chainorder[table]:
                         chainorder[table][chain] = (num, fname, linenr)
                     elif chainorder[table][chain][0] != num:
                         raise FWOrderConflict(
-                            chain, 
+                            chain,
                             fname,
                             linenr,
                             (chainorder[table][chain]),
@@ -1923,7 +2010,7 @@ class FWCompile(object):
             sortchains.sort()
             self.newchains[table] = []
             for order, chain in sortchains:
-                if not chain in self.newchains[table]:
+                if chain not in self.newchains[table]:
                     self.newchains[table].append(chain)
 
     def generate_restore_file(self, rule_file):
@@ -1933,26 +2020,30 @@ class FWCompile(object):
             targets[table] = []
             rules[table] = []
             for chain in self.newchains[table]:
-                if not table in self.tables:
+                if table not in self.tables:
                     raise FWInvalidTable(table)
                 targets[table].append(chain)
-                parentchains  = self.parentchains(table, chain)
+                parentchains = self.parentchains(table, chain)
                 for pchain in parentchains:
                     m = self.re_chaindef.match(chain)
                     if m.group(2):
                         iface = m.group(2)[1:-1]
                         direction = m.group(2)[0].lower()
-                        rules[table].append("-A %s -%s %s -j %s" % ( pchain, direction, iface, chain))
+                        rules[table].append("-A %s -%s %s -j %s" % (
+                            pchain, direction, iface, chain))
                     else:
                         rules[table].append("-A %s -j %s" % (pchain, chain))
         for table in self.tables:
             for chain in self.newchains[table]:
                 for fname in self.filechains.keys():
-                    if self.filechains[fname][table].has_key(chain):
+                    if chain in self.filechains[fname][table]:
                         for line in self.filechains[fname][table][chain]:
                             match = self.re_table_rule.match(line)
                             if match:
-                                line = "%s %s" % (match.group(1).strip(), match.group(3).strip())
+                                line = "%s %s" % (
+                                    match.group(1).strip(),
+                                    match.group(3).strip(),
+                                )
                             rules[table].append(line.strip())
 
         if rule_file == "-" or not rule_file:
@@ -1961,7 +2052,8 @@ class FWCompile(object):
             fp = rule_file
         else:
             fp = open(rule_file, "w")
-        fp.write("# Generated with %s at %s\n" % (self.__class__.__name__, time.ctime(),))
+        fp.write("# Generated with %s at %s\n" % (
+            self.__class__.__name__, time.ctime(),))
         for table in self.tables:
             fp.write("*%s\n" % table)
             if self.remove_all_chains or table != "filter":
@@ -1970,7 +2062,7 @@ class FWCompile(object):
                 policy = "DROP"
             for target in self.builtin_chains[table]:
                 fp.write(":%s %s [0:0]\n" % (target, policy))
-            
+
             for target in targets[table]:
                 fp.write(":%s - [0:0]\n" % target)
             for rule in rules[table]:
@@ -2046,8 +2138,6 @@ ICMPv6 options:
         help="Force the use of groups (default: '%s')" % False,
     )
 
-
-
     opts, args = parser.parse_args()
     if opts.version:
         print "Version: %s" % ".".join([str(i) for i in __version__])
@@ -2077,6 +2167,7 @@ ICMPv6 options:
         sys.stderr.write("Errors (%s)\n" % fwprepocess.nerrors)
         sys.exit(1)
     sys.exit(0)
+
 
 def fwmc():
     import optparse
@@ -2150,10 +2241,15 @@ usage: %prog [options] start | stop
         action="append",
         dest="reserved_targets",
         default=FWCompile.reserved_targets,
-        help="reserved target (e.g. ACCEPT) that will not be mapped to a chain",
+        help=(
+            "reserved target (e.g. ACCEPT) that "
+            "will not be mapped to a chain"
+        ),
     )
+
     def no_reserved_target(option, opt_str, value, parser, *args, **kwargs):
         FWCompile.reserved_targets.remove(value)
+
     parser.add_option(
         "--no-reserved-target",
         type="string",
@@ -2168,7 +2264,6 @@ usage: %prog [options] start | stop
         default=False,
         help="show help on reserved targets",
     )
-
 
     default_reserved_targets = [] + FWCompile.reserved_targets
     opts, args = parser.parse_args()
@@ -2200,7 +2295,7 @@ usage: %prog [options] start | stop
     elif len(args) != 1:
         sys.stderr.write("Too many arguments\n")
         sys.exit(1)
-    if not args[0] in ["start", "stop"]:
+    if args[0] not in ["start", "stop"]:
         sys.stderr.write("Invalid argument '%s'\n" % args[0])
         sys.exit(1)
 
@@ -2210,8 +2305,8 @@ usage: %prog [options] start | stop
 
     if opts.ipv4:
         fwcompile = FWCompileIPv4(
-            remove_all_chains = remove_all_chains,
-            verbose = opts.verbose,
+            remove_all_chains=remove_all_chains,
+            verbose=opts.verbose,
         )
         fwcompile.chainsdir = opts.chainsdir_ip4
         chainsfiles = os.listdir(fwcompile.chainsdir)
@@ -2222,8 +2317,8 @@ usage: %prog [options] start | stop
             fwcompile.log_error(e.log_message())
     if opts.ipv6:
         fwcompile = FWCompileIPv6(
-            remove_all_chains = remove_all_chains,
-            verbose = opts.verbose,
+            remove_all_chains=remove_all_chains,
+            verbose=opts.verbose,
         )
         fwcompile.chainsdir = opts.chainsdir_ip6
         chainsfiles = os.listdir(fwcompile.chainsdir)
@@ -2233,6 +2328,7 @@ usage: %prog [options] start | stop
         except FWMacroException, e:
             fwcompile.log_error(e.log_message())
     sys.exit(0)
+
 
 def main():
     progname = os.path.basename(sys.argv[0])
