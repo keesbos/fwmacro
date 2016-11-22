@@ -33,4 +33,4 @@ deb-clean:
 	rm -f distro/python-fwmacro_*.changes
 
 pypi-upload: all
-	twine upload dist/fwmacro-0.9.4-py2.7.egg 
+	twine upload dist/fwmacro-0.9.5-py2.7.egg 

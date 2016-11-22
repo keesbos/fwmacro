@@ -126,7 +126,7 @@ class FWMCompileTestCase(unittest.TestCase):
         )
 
     def testChainOrder(self):
-        # 10IN-vrrp2 should com before 11IN-vrrp1
+        # 10IN-vrrp2 should come before 11IN-vrrp1
         chain_file_data = dict(
             file1 = """
 -A 11IN-vrrp1 -p all -m state --state NEW -j ACCEPT --dst 224.0.0.18/32

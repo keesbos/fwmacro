@@ -1,3 +1,13 @@
+python-fwmacro (0.9.5) unstable; urgency=low
+
+  * Support for --force-groups
+
+  * PEP8
+
+  * Documentation update
+
+ -- Kees Bos <k.bos@capitar.com>  Wed, 1 Jul 2016 12:34:00 +0200
+
 python-fwmacro (0.9.4) unstable; urgency=low
 
   * Fix for icmpv6 state
