@@ -1,8 +1,80 @@
+# See https://www.ietf.org/rfc/rfc4890.txt
+
 # Accept established and related packets
--A 10stateful -mstate --state ESTABLISHED,RELATED -j ACCEPT
+-A 10default -mstate --state ESTABLISHED,RELATED -j ACCEPT
+
 # Drop all invalid packets
--A 10stateful -mstate --state INVALID -j DROP
+-A 10default -mstate --state INVALID -j DROP
 
 # Ipv6 depends on icmp. Here we allow all, but this should/could
 # be restricted to the required icmp types
--A 10icmpv6 -p icmpv6 -j ACCEPT
+# -A 10icmpv6 -p icmpv6 -j ACCEPT
+
+
+
+# Allow some ICMPv6 types on any chain (INPUT/OUTPUT/FORWARD)
+# Using ICMPv6 type names to be clear.
+-A 10default -p icmpv6 --icmpv6-type time-exceeded -j ACCEPT
+-A 10default -p icmpv6 --icmpv6-type parameter-problem -j ACCEPT
+
+-A 10default -p icmpv6 --icmpv6-type destination-unreachable -j ACCEPT
+-A 10default -p icmpv6 --icmpv6-type packet-too-big -j ACCEPT
+-A 10default -p icmpv6 --icmpv6-type ttl-zero-during-transit -j ACCEPT
+-A 10default -p icmpv6 --icmpv6-type ttl-zero-during-reassembly -j ACCEPT
+
+
+# Allow some ICMPv6 types in the INPUT chain, but only if the hop limit field is 255.
+-A 10IN-default -p icmpv6 --icmpv6-type router-solicitation -m hl --hl-eq 255 -j ACCEPT
+-A 10IN-default -p icmpv6 --icmpv6-type router-advertisement -m hl --hl-eq 255 -j ACCEPT
+-A 10IN-default -p icmpv6 --icmpv6-type neighbor-solicitation -m hl --hl-eq 255 -j ACCEPT
+-A 10IN-default -p icmpv6 --icmpv6-type neighbor-advertisement -m hl --hl-eq 255 -j ACCEPT
+-A 10IN-default -p icmpv6 --icmpv6-type 141 -m hl --hl-eq 255 -j ACCEPT # IND solicitation
+-A 10IN-default -p icmpv6 --icmpv6-type 142 -m hl --hl-eq 255 -j ACCEPT # IND advertisement
+-A 10IN-default -p icmpv6 --icmpv6-type 148 -m hl --hl-eq 255 -j ACCEPT # SEND certificate path solicitation
+-A 10IN-default -p icmpv6 --icmpv6-type 149 -m hl --hl-eq 255 -j ACCEPT # SEND certificate path advertisement
+-A 10IN-default -p icmpv6 --icmpv6-type redirect -m hl --hl-eq 255 -j ACCEPT
+
+# Allow some ICMPv6 types in the INPUT chain, but only for source fe80::/10
+-A 10IN-default -p icmpv6 --icmpv6-type 130 -s fe80::/10 -j ACCEPT # MLD query
+-A 10IN-default -p icmpv6 --icmpv6-type 131 -s fe80::/10 -j ACCEPT # MLD report
+-A 10IN-default -p icmpv6 --icmpv6-type 132 -s fe80::/10 -j ACCEPT # MLD done
+-A 10IN-default -p icmpv6 --icmpv6-type 143 -s fe80::/10 -j ACCEPT # MLD report v2
+-A 10IN-default -p icmpv6 --icmpv6-type 151 -s fe80::/10 -m hl --hl-eq 1 -j ACCEPT # MR advertisement
+-A 10IN-default -p icmpv6 --icmpv6-type 152 -s fe80::/10 -m hl --hl-eq 1 -j ACCEPT # MR solicitation
+-A 10IN-default -p icmpv6 --icmpv6-type 153 -s fe80::/10 -m hl --hl-eq 1 -j ACCEPT # MR termination
+
+# Allow some ICMPv6 types in the OUPUT chain, but only if the hop limit field is 255.
+-A 10OUT-default -p icmpv6 --icmpv6-type router-solicitation -m hl --hl-eq 255 -j ACCEPT
+-A 10OUT-default -p icmpv6 --icmpv6-type router-advertisement -m hl --hl-eq 255 -j ACCEPT
+-A 10OUT-default -p icmpv6 --icmpv6-type neighbor-solicitation -m hl --hl-eq 255 -j ACCEPT
+-A 10OUT-default -p icmpv6 --icmpv6-type neighbor-advertisement -m hl --hl-eq 255 -j ACCEPT
+-A 10OUT-default -p icmpv6 --icmpv6-type 141 -m hl --hl-eq 255 -j ACCEPT # IND solicitation
+-A 10OUT-default -p icmpv6 --icmpv6-type 142 -m hl --hl-eq 255 -j ACCEPT # IND advertisement
+-A 10OUT-default -p icmpv6 --icmpv6-type 148 -m hl --hl-eq 255 -j ACCEPT # SEND certificate path solicitation
+-A 10OUT-default -p icmpv6 --icmpv6-type 149 -m hl --hl-eq 255 -j ACCEPT # SEND certificate path advertisement
+-A 10OUT-default -p icmpv6 --icmpv6-type redirect -m hl --hl-eq 255 -j ACCEPT
+
+# Allow some ICMPv6 types in the OUPUT chain, but only for source fe80::/10
+-A 10OUT-default -p icmpv6 --icmpv6-type 130 -s fe80::/10 -j ACCEPT # MLD query
+-A 10OUT-default -p icmpv6 --icmpv6-type 131 -s fe80::/10 -j ACCEPT # MLD report
+-A 10OUT-default -p icmpv6 --icmpv6-type 132 -s fe80::/10 -j ACCEPT # MLD done
+-A 10OUT-default -p icmpv6 --icmpv6-type 143 -s fe80::/10 -j ACCEPT # MLD report v2
+-A 10OUT-default -p icmpv6 --icmpv6-type 151 -s fe80::/10 -m hl --hl-eq 1 -j ACCEPT # MR advertisement
+-A 10OUT-default -p icmpv6 --icmpv6-type 152 -s fe80::/10 -m hl --hl-eq 1 -j ACCEPT # MR solicitation
+-A 10OUT-default -p icmpv6 --icmpv6-type 153 -s fe80::/10 -m hl --hl-eq 1 -j ACCEPT # MR termination
+
+
+# Allow some other types in the any chain, but rate limit.
+-A 10default -p icmpv6 --icmpv6-type echo-request -m limit --limit 100/sec -j ACCEPT
+-A 10default -p icmpv6 --icmpv6-type echo-reply -m limit -j ACCEPT
+-A 10default -p icmpv6 --icmpv6-type echo-request -j LOG --log-prefix "dropped ICMPv6 echo-request"
+-A 10default -p icmpv6 --icmpv6-type echo-request -j DROP
+
+
+# If we're not routing, but act like a router, that could be a problem.
+# Log it and reject.
+
+#-A 10OUT-default -p icmpv6 --icmpv6-type router-advertisement -j LOG --log-prefix "ra ICMPv6 type"
+#-A 10OUT-default -p icmpv6 --icmpv6-type redirect -j LOG --log-prefix "redirect ICMPv6 type"
+#-A 10OUT-default -p icmpv6 --icmpv6-type router-advertisement -j REJECT
+#-A 10OUT-default -p icmpv6 --icmpv6-type redirect -j REJECT

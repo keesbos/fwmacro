@@ -1,11 +1,4 @@
 #!/bin/sh
 set -e
 
-if ! which easy_install >/dev/null ; then 
-	echo "Cannot find easy_install. Please install python-setuptools"
-	exit 1
-fi
-easy_install netaddr
-easy_install plex
-
 exit 0

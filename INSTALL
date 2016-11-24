@@ -22,7 +22,7 @@ make deb
 sudo apt-get python-setuptools
 sudo dpkg -i distro/python-fwmacro_*_all.deb
 FYI. The debian preinstall script wil do:
-    easy_install plex
-    easy_install netaddr
+    pip install netaddr
+    pip install netifaces
 
 The debian package will show up in the distro directory.

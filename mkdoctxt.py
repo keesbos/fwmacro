@@ -4,16 +4,16 @@ import sys
 import fwmacro
 
 rule_syntax = "\n".join(
-    [" %s" % line for line in fwmacro.rule_explanation.split("\n")],
+    [" %s" % line for line in fwmacro.FWMacro.rule_explanation.split("\n")],
 )
 rule_defaults = "\n".join(
-    [" %s" % line for line in fwmacro.rule_defaults_txt.split("\n")],
+    [" %s" % line for line in fwmacro.FWMacro.default_rule.split("\n")],
 )
 log_tag = fwmacro.FWPreprocess.logtag
-chains4_dir = fwmacro.CHAINSDIR_IPV4
-chains6_dir = fwmacro.CHAINSDIR_IPV6
-ipv4_rules = fwmacro.CHAINSFILE_IPV4
-ipv6_rules = fwmacro.CHAINSFILE_IPV6
+chains4_dir = fwmacro.FWMacro.chainsdir_ipv4
+chains6_dir = fwmacro.FWMacro.chainsdir_ipv6
+ipv4_rules = fwmacro.FWMacro.chainsfile_ipv4
+ipv6_rules = fwmacro.FWMacro.chainsfile_ipv6
 
 for fname in sys.argv[1:]:
     if fname[-3:] != ".in":

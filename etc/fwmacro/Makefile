@@ -1,5 +1,7 @@
 # Makefile for fwmacro
 
+REMOTE=cfgsync
+
 all: .preprocess .compile
 
 .preprocess: fw.rules
@@ -20,10 +22,13 @@ stop:
 	@-rm .compile
 
 update:
-#	To force preprocessing/compiling:
-#	touch fw.rules
-#	To retrieve config from subversion:
-#	svn update
+#       To force preprocessing/compiling:
+#       touch fw.rules
+#       To retrieve config from subversion:
+#       svn update
+	@echo
+	@echo Pulling changes on `uname -n` from $(REMOTE)
+	@-git pull ssh://$(REMOTE)/etc/fwmacro master &> /dev/null
 
 install-ipv4: ipv4.rules
 	sudo iptables-restore ipv4.rules
@@ -31,5 +36,7 @@ install-ipv4: ipv4.rules
 install-ipv6: ipv6.rules
 	sudo ip6tables-restore ipv6.rules
 
-install: update .preprocess .compile install-ipv4 install-ipv6
+install: .preprocess .compile install-ipv4 install-ipv6
 
+sync:
+	ssh -A $(REMOTE) "cd /etc/fwmacro;make update;make install"

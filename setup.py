@@ -1,25 +1,22 @@
-try:
-    from setuptools import setup
-    kw = {"entry_points":
-          """\
-[console_scripts]
-fwmpp = fwmacro:fwmpp
-fwmc = fwmacro:fwmc
-""",
-          "zip_safe": False}
-except ImportError:
-    from distutils.core import setup
-    kw = {"scripts": ["scripts/fwmpp", "scripts/fwmc"]}
 
-long_description = open("description.txt").read()
+from setuptools import setup
+from codecs import open
+from os import path
+
+here = path.abspath(path.dirname(__file__))
+
+# Get the long description from the README file
+with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
+    long_description = f.read()
 
 setup(
     name="fwmacro",
-    version="0.9.5",
+    version="0.9.6",
     description="Firewall macro compiler",
     long_description=long_description,
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
+        "Programming Language :: Python :: 2.7",
         "Environment :: Console",
         "Intended Audience :: Developers",
         "Intended Audience :: System Administrators",
@@ -45,10 +42,30 @@ setup(
     license="MIT",
     py_modules=["fwmacro"],
     packages=[],
-    include_package_data=True,
     install_requires=[
-        "plex",
         "netaddr",
+        "netifaces",
     ],
-    **kw
+    entry_points={
+        'console_scripts': [
+            'fwmpp=fwmacro:fwmpp',
+            'fwmc=fwmacro:fwmc',
+        ]
+    },
+    data_files=[
+        ("/etc/fwmacro", [
+            "etc/fwmacro/Makefile",
+            "etc/fwmacro/ipv4stop.rules",
+            "etc/fwmacro/ipv6stop.rules",
+            "etc/fwmacro/fw.rules.sample",
+            "etc/fwmacro/commit.sh.sample",
+            "etc/fwmacro/fwmacro.init",
+        ]),
+        ("/etc/fwmacro/chains4", [
+            "etc/fwmacro/chains4/default",
+        ]),
+        ("/etc/fwmacro/chains6", [
+            "etc/fwmacro/chains6/default",
+        ]),
+    ]
 )

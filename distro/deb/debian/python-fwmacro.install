@@ -9,6 +9,4 @@
 ../../etc/init.d/fwmacro etc/init.d
 ../../scripts/fwmpp usr/bin
 ../../scripts/fwmc usr/bin
-../../fwmacro.py usr/lib/python2.5/site-packages
-../../fwmacro.py usr/lib/python2.6/dist-packages
 ../../fwmacro.py usr/lib/python2.7/dist-packages

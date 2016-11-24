@@ -4,11 +4,11 @@ Priority: optional
 Homepage: https://github.com/keesbos/fwmacro
 Standards-Version: 3.7.3
 Maintainer: Kees Bos <cornelis.bos@gmail.com>
-XS-Python-Version: all
+XS-Python-Version: 2.7
 
 Package: python-fwmacro
-Architecture: all
-Pre-Depends: python-setuptools
+Architecture: any
+Depends: python2.7, python-netaddr, python-netifaces
 Description: firewall macro rules preprocessor/compiler
  fwmacro is a library for generating iptables/ip6tables rules and to
  generate input files for iptables-restore and ip6tables-restore.

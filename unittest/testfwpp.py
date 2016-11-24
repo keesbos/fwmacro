@@ -1,23 +1,15 @@
 #!/usr/bin/env python
 
-import sys
-import os.path
-# Make sure we'll import the fwmacro module from the
-# source directory and not from the system directories
-sys.path.insert(
-    0,
-    os.path.abspath(os.path.join(
-    os.path.dirname(os.path.abspath(__file__)),
-        "..",
-    )),
-)
-
-import unittest
 from StringIO import StringIO
 from netaddr import IPNetwork
 
+import unittest
 import fwmacro
-from fwmacro import *
+from fwmacro import (
+    FWIPMaskBoundaryError,
+    FWUndefinedGroup,
+    Hostname,
+)
 
 
 class FWPreprocess(fwmacro.FWPreprocess):
@@ -26,7 +18,7 @@ class FWPreprocess(fwmacro.FWPreprocess):
         self.all_errors = []
         self.all_warnings = []
 
-    def log_error(self, msg, lineno = None):
+    def log_error(self, msg, lineno=None):
         self.nerrors += 1
         if lineno is None:
             p = self.position()
@@ -34,7 +26,7 @@ class FWPreprocess(fwmacro.FWPreprocess):
                 lineno = p[1]
         self.all_errors.append((lineno, msg))
 
-    def log_warning(self, msg, lineno = None):
+    def log_warning(self, msg, lineno=None):
         self.nwarnings += 1
         if lineno is None:
             p = self.position()
@@ -57,7 +49,11 @@ class FWMPreprocessTestCase(unittest.TestCase):
         if not permit_errors:
             if fwprepocess.all_errors:
                 print fwprepocess.all_errors
-            self.assertEqual(len(fwprepocess.all_errors), 0, str(fwprepocess.all_errors))
+            self.assertEqual(
+                len(fwprepocess.all_errors),
+                0,
+                str(fwprepocess.all_errors)
+            )
         if not permit_warnings:
             if fwprepocess.all_warnings:
                 print fwprepocess.all_warnings
@@ -120,7 +116,7 @@ group bar:
         self.assertEquals(
             fwprepocess.groups["bar"],
             [
-                [IPNetwork('127.0.0.1/32'),],
+                [IPNetwork('127.0.0.1/32'), ],
                 IPNetwork('127.0.0.0/30'),
             ],
         )
@@ -141,7 +137,7 @@ group foo:
         self.assertEquals(
             fwprepocess.groups["bar"],
             [
-                [IPNetwork('127.0.0.1/32'),],
+                [IPNetwork('127.0.0.1/32'), ],
                 IPNetwork('127.0.0.0/30'),
             ],
         )
@@ -238,15 +234,19 @@ interface lo:
         self.assertEqual(
             chains4["fwm-ifs"],
             [
-                "-t filter -i lo -p all -m state --state NEW -A 101ilo:ifs -j RETURN",
-                "-t filter -o lo -p all -m state --state NEW -A 101olo:ifs -j ACCEPT",
+                "-t filter -i lo -p all -m state --state NEW "
+                "-A 101ilo:ifs -j RETURN",
+                "-t filter -o lo -p all -m state --state NEW "
+                "-A 101olo:ifs -j ACCEPT",
             ],
         )
         self.assertEqual(
             chains6["fwm-ifs"],
             [
-                "-t filter -i lo -p all -m state --state NEW -A 101ilo:ifs -j RETURN",
-                "-t filter -o lo -p all -m state --state NEW -A 101olo:ifs -j ACCEPT",
+                "-t filter -i lo -p all -m state --state NEW "
+                "-A 101ilo:ifs -j RETURN",
+                "-t filter -o lo -p all -m state --state NEW "
+                "-A 101olo:ifs -j ACCEPT",
             ],
         )
 
@@ -270,13 +270,15 @@ interface lo:
         self.assertEqual(
             chains4["fwm-ifs"],
             [
-                "-t filter -i lo -p all -m state --state NEW -A 101ilo:ifs -j RETURN",
+                "-t filter -i lo -p all -m state --state NEW "
+                "-A 101ilo:ifs -j RETURN",
             ],
         )
         self.assertEqual(
             chains6["fwm-ifs"],
             [
-                "-t filter -i lo -p all -m state --state NEW -A 101ilo:ifs -j RETURN",
+                "-t filter -i lo -p all -m state --state NEW "
+                "-A 101ilo:ifs -j RETURN",
             ],
         )
 
@@ -303,12 +305,20 @@ interface lo:
         self.assertEqual(
             chains4["fwm-ifs"],
             [
-                "-t nat -o lo -p all -m state --state NEW -A 101olo:ifs -j DNAT --to-destination 127.0.0.1", 
-                "-t nat -o lo -p all -m state --state NEW -A 101olo:ifs -j DNAT --to-destination 127.0.0.1-127.0.0.2",
-                "-t nat -o lo -p tcp -m state --state NEW -A 101olo:ifs -j DNAT --to-destination 127.0.0.1-127.0.0.2:80",
-                "-t nat -o lo -p tcp -m state --state NEW -A 101olo:ifs -j DNAT --to-destination 127.0.0.1-127.0.0.2:80-84",
-                "-t nat -o lo -p tcp -m state --state NEW -A 101olo:ifs -j DNAT --to-destination 127.0.0.1-127.0.0.2:80   --dst 127.0.0.3/32",
-                "-t nat -o lo -p tcp -m state --state NEW -A 101olo:ifs -j DNAT --to-destination 127.0.0.1-127.0.0.2:80    --dport 80",
+                "-t nat -o lo -p all -m state --state NEW -A 101olo:ifs "
+                "-j DNAT --to-destination 127.0.0.1",
+                "-t nat -o lo -p all -m state --state NEW -A 101olo:ifs "
+                "-j DNAT --to-destination 127.0.0.1-127.0.0.2",
+                "-t nat -o lo -p tcp -m state --state NEW -A 101olo:ifs "
+                "-j DNAT --to-destination 127.0.0.1-127.0.0.2:80",
+                "-t nat -o lo -p tcp -m state --state NEW -A 101olo:ifs "
+                "-j DNAT --to-destination 127.0.0.1-127.0.0.2:80-84",
+                "-t nat -o lo -p tcp -m state --state NEW -A 101olo:ifs "
+                "-j DNAT --to-destination 127.0.0.1-127.0.0.2:80   "
+                "--dst 127.0.0.3/32",
+                "-t nat -o lo -p tcp -m state --state NEW -A 101olo:ifs "
+                "-j DNAT --to-destination 127.0.0.1-127.0.0.2:80    "
+                "--dport 80",
             ],
         )
         self.assertEqual(
@@ -339,12 +349,19 @@ interface lo:
         self.assertEqual(
             chains4["fwm-ifs"],
             [
-                "-t nat -o lo -p all -m state --state NEW -A 101olo:ifs -j SNAT --to-source 127.0.0.1",
-                "-t nat -o lo -p all -m state --state NEW -A 101olo:ifs -j SNAT --to-source 127.0.0.1-127.0.0.2",
-                "-t nat -o lo -p tcp -m state --state NEW -A 101olo:ifs -j SNAT --to-source 127.0.0.1-127.0.0.2:80",
-                "-t nat -o lo -p tcp -m state --state NEW -A 101olo:ifs -j SNAT --to-source 127.0.0.1-127.0.0.2:80-84",
-                "-t nat -o lo -p tcp -m state --state NEW -A 101olo:ifs -j SNAT --to-source 127.0.0.1-127.0.0.2:80 --src 127.0.0.3/32",
-                "-t nat -o lo -p tcp -m state --state NEW -A 101olo:ifs -j SNAT --to-source 127.0.0.1-127.0.0.2:80  --sport 80",
+                "-t nat -o lo -p all -m state --state NEW -A 101olo:ifs "
+                "-j SNAT --to-source 127.0.0.1",
+                "-t nat -o lo -p all -m state --state NEW -A 101olo:ifs "
+                "-j SNAT --to-source 127.0.0.1-127.0.0.2",
+                "-t nat -o lo -p tcp -m state --state NEW -A 101olo:ifs "
+                "-j SNAT --to-source 127.0.0.1-127.0.0.2:80",
+                "-t nat -o lo -p tcp -m state --state NEW -A 101olo:ifs "
+                "-j SNAT --to-source 127.0.0.1-127.0.0.2:80-84",
+                "-t nat -o lo -p tcp -m state --state NEW -A 101olo:ifs "
+                "-j SNAT --to-source 127.0.0.1-127.0.0.2:80 "
+                "--src 127.0.0.3/32",
+                "-t nat -o lo -p tcp -m state --state NEW -A 101olo:ifs "
+                "-j SNAT --to-source 127.0.0.1-127.0.0.2:80  --sport 80",
             ],
         )
         self.assertEqual(
@@ -358,11 +375,13 @@ interface lo:
     out dnat 129.0.0.1 80 ip any any
     out dnat 128.0.0.1 ip ::/0 ::/0
 """
-        fwprepocess, chains4, chains6 = self.get_chains(rules, permit_errors=True)
+        fwprepocess, chains4, chains6 = self.get_chains(
+            rules, permit_errors=True)
         self.assertEqual(
             fwprepocess.all_errors,
             [
-                (3, "Ports not used in nat definition (use tcp or udp match condition)"),
+                (3, "Ports not used in nat definition "
+                    "(use tcp or udp match condition)"),
                 (4, "NAT rule only valid for IPv4"),
             ],
         )
@@ -375,11 +394,13 @@ ruleset uplink:
 interface eth0:
     ruleset uplink
 """
-        fwprepocess, chains4, chains6 = self.get_chains(rules, permit_errors=True)
+        fwprepocess, chains4, chains6 = self.get_chains(
+            rules, permit_errors=True)
         self.assertEqual(
             chains4["fwm-ifs"],
             [
-                "-t nat -o eth0 -p all -A 101oeth0:ifs -j MASQUERADE --src 192.168.0.0/24",
+                "-t nat -o eth0 -p all -A 101oeth0:ifs "
+                "-j MASQUERADE --src 192.168.0.0/24",
             ],
         )
 
@@ -403,8 +424,8 @@ group bar:
         self.assertEquals(
             fwprepocess.groups["bar"],
             [
-                IPNetwork('2001:470:14::/63'), 
-                IPNetwork('2001:470:15::/63'), 
+                IPNetwork('2001:470:14::/63'),
+                IPNetwork('2001:470:15::/63'),
                 IPNetwork('2001:470:15::/64'),
             ],
         )
@@ -425,9 +446,11 @@ interface eth0:
         self.assertEquals(
             chains4["fwm-ifs"],
             [
-                '-t filter -i eth0 -p 41 -m state --state NEW -A 101ieth0:ifs -j RETURN',
+                '-t filter -i eth0 -p 41 -m state --state NEW '
+                '-A 101ieth0:ifs -j RETURN',
             ],
         )
+
     def testProtocolName(self):
         rules = """
 interface eth0:
@@ -437,13 +460,15 @@ interface eth0:
         self.assertEquals(
             chains4["fwm-ifs"],
             [
-                '-t filter -i eth0 -p 2 -m state --state NEW -A 101ieth0:ifs -j RETURN',
+                '-t filter -i eth0 -p 2 -m state --state NEW '
+                '-A 101ieth0:ifs -j RETURN',
             ],
         )
         self.assertEquals(
             chains6["fwm-ifs"],
             [
-                '-t filter -i eth0 -p 2 -m state --state NEW -A 101ieth0:ifs -j RETURN',
+                '-t filter -i eth0 -p 2 -m state --state NEW '
+                '-A 101ieth0:ifs -j RETURN',
             ],
         )
 
@@ -460,29 +485,50 @@ interface eth0:
     in permit icmp 0 2001:470:15:80::3/128 2001:470:15:80::4/128
     in permit icmp echo-reply 2001:470:15:80::3/128 2001:470:15:80::4/128
     in permit icmp 3/0 2001:470:15:80::3/128 2001:470:15:80::4/128
-    in permit icmp communication-prohibited 2001:470:15:80::3/128 2001:470:15:80::4/128
+    in permit icmp communication-prohibited 2001:470:15:80::3/128 \
+2001:470:15:80::4/128
 """
         fwprepocess, chains4, chains6 = self.get_chains(rules)
         self.assertEquals(
             chains4["fwm-ifs"],
             [
-                '-t filter -o eth0 -p icmp -m state --state NEW -A 101oeth0:ifs -j ACCEPT',
-                '-t filter -i eth0 -p icmp -m state --state NEW -A 101ieth0:ifs -j RETURN --src 1.2.3.4/32  --dst 5.6.7.8/32',
-                '-t filter -i eth0 -p icmp --icmp-type 0 -m state --state NEW -A 101ieth0:ifs -j RETURN --src 1.2.3.4/32  --dst 5.6.7.8/32',
-                '-t filter -i eth0 -p icmp --icmp-type echo-reply -m state --state NEW -A 101ieth0:ifs -j RETURN --src 1.2.3.4/32  --dst 5.6.7.8/32',
-                '-t filter -i eth0 -p icmp --icmp-type 3/0 -m state --state NEW -A 101ieth0:ifs -j RETURN --src 1.2.3.4/32  --dst 5.6.7.8/32',
-                '-t filter -i eth0 -p icmp --icmp-type network-unreachable -m state --state NEW -A 101ieth0:ifs -j RETURN --src 1.2.3.4/32  --dst 5.6.7.8/32',
+                '-t filter -o eth0 -p icmp -m state --state NEW '
+                '-A 101oeth0:ifs -j ACCEPT',
+                '-t filter -i eth0 -p icmp -m state --state NEW '
+                '-A 101ieth0:ifs -j RETURN --src 1.2.3.4/32  --dst 5.6.7.8/32',
+                '-t filter -i eth0 -p icmp --icmp-type 0 -m state '
+                '--state NEW -A 101ieth0:ifs -j RETURN '
+                '--src 1.2.3.4/32  --dst 5.6.7.8/32',
+                '-t filter -i eth0 -p icmp --icmp-type echo-reply -m state '
+                '--state NEW -A 101ieth0:ifs -j RETURN '
+                '--src 1.2.3.4/32  --dst 5.6.7.8/32',
+                '-t filter -i eth0 -p icmp --icmp-type 3/0 -m state '
+                '--state NEW -A 101ieth0:ifs -j RETURN '
+                '--src 1.2.3.4/32  --dst 5.6.7.8/32',
+                '-t filter -i eth0 -p icmp --icmp-type network-unreachable '
+                '-m state --state NEW -A 101ieth0:ifs -j RETURN '
+                '--src 1.2.3.4/32  --dst 5.6.7.8/32',
             ],
         )
         self.assertEquals(
             chains6["fwm-ifs"],
             [
                 '-t filter -o eth0 -p icmpv6 -A 101oeth0:ifs -j ACCEPT',
-                '-t filter -i eth0 -p icmpv6 -A 101ieth0:ifs -j RETURN --src 2001:470:15:80::3/128  --dst 2001:470:15:80::4/128',
-                '-t filter -i eth0 -p icmpv6 --icmpv6-type 0 -A 101ieth0:ifs -j RETURN --src 2001:470:15:80::3/128  --dst 2001:470:15:80::4/128',
-                '-t filter -i eth0 -p icmpv6 --icmpv6-type echo-reply -A 101ieth0:ifs -j RETURN --src 2001:470:15:80::3/128  --dst 2001:470:15:80::4/128',
-                '-t filter -i eth0 -p icmpv6 --icmpv6-type 3/0 -A 101ieth0:ifs -j RETURN --src 2001:470:15:80::3/128  --dst 2001:470:15:80::4/128',
-                '-t filter -i eth0 -p icmpv6 --icmpv6-type communication-prohibited -A 101ieth0:ifs -j RETURN --src 2001:470:15:80::3/128  --dst 2001:470:15:80::4/128',
+                '-t filter -i eth0 -p icmpv6 -A 101ieth0:ifs -j RETURN '
+                '--src 2001:470:15:80::3/128  --dst 2001:470:15:80::4/128',
+                '-t filter -i eth0 -p icmpv6 --icmpv6-type 0 -A 101ieth0:ifs '
+                '-j RETURN --src 2001:470:15:80::3/128  '
+                '--dst 2001:470:15:80::4/128',
+                '-t filter -i eth0 -p icmpv6 --icmpv6-type echo-reply '
+                '-A 101ieth0:ifs -j RETURN '
+                '--src 2001:470:15:80::3/128  --dst 2001:470:15:80::4/128',
+                '-t filter -i eth0 -p icmpv6 --icmpv6-type 3/0 '
+                '-A 101ieth0:ifs -j RETURN '
+                '--src 2001:470:15:80::3/128  --dst 2001:470:15:80::4/128',
+                '-t filter -i eth0 -p icmpv6 '
+                '--icmpv6-type communication-prohibited -A 101ieth0:ifs '
+                '-j RETURN '
+                '--src 2001:470:15:80::3/128  --dst 2001:470:15:80::4/128',
             ],
         )
 
@@ -504,7 +550,7 @@ ruleset no_localhost:
 interface eth0:
     ruleset no_localhost
     # rules to/from the interface itself start with "local"
-    # Permit access from staff to ssh port (only the ip addresses bound to eth0)
+    # Permit access from staff to ssh port (only ip addresses bound to eth0)
     local in permit tcp staff all any 22
     local in deny ip any any log
     local out permit ip any any
@@ -516,16 +562,30 @@ interface eth0:
         self.assertEqual(
             chains4["fwm-ifs"],
             [
-                '-t filter -i eth0 -p all -m state --state NEW -A 101Ieth0:ifs -j DROP --src 127.0.0.1/32',
-                '-t filter -i eth0 -p all -m state --state NEW -A 101ieth0:ifs -j DROP --src 127.0.0.1/32',
-                '-t filter -i eth0 -p tcp -m state --state NEW -A 101Ieth0:ifs -j ACCEPT --src 1.2.3.10/32   --dport 22',
-                '-t filter -i eth0 -p tcp -m state --state NEW -A 101Ieth0:ifs -j ACCEPT --src 1.2.3.4/30   --dport 22',
-                '-t filter -i eth0 -p all -m state --state NEW -A 101Ieth0:ifs -j LOG --log-prefix "eth0-ifs-18-deny " --log-level warning -m limit --limit 60/minute --limit-burst 10',
-                '-t filter -i eth0 -p all -m state --state NEW -A 101Ieth0:ifs -j DROP',
-                '-t filter -o eth0 -p all -m state --state NEW -A 101Oeth0:ifs -j ACCEPT',
-                '-t filter -i eth0 -p all -m state --state NEW -A 101ieth0:ifs -j LOG --log-prefix "eth0-ifs-21-permit " --log-level warning -m limit --limit 60/minute --limit-burst 10',
-                '-t filter -i eth0 -p all -m state --state NEW -A 101ieth0:ifs -j RETURN',
-                '-t filter -o eth0 -p all -m state --state NEW -A 101oeth0:ifs -j ACCEPT'
+                '-t filter -i eth0 -p all -m state --state NEW '
+                '-A 101Ieth0:ifs -j DROP --src 127.0.0.1/32',
+                '-t filter -i eth0 -p all -m state --state NEW '
+                '-A 101ieth0:ifs -j DROP --src 127.0.0.1/32',
+                '-t filter -i eth0 -p tcp -m state --state NEW '
+                '-A 101Ieth0:ifs -j ACCEPT --src 1.2.3.10/32   --dport 22',
+                '-t filter -i eth0 -p tcp -m state --state NEW '
+                '-A 101Ieth0:ifs -j ACCEPT --src 1.2.3.4/30   --dport 22',
+                '-t filter -i eth0 -p all -m state --state NEW '
+                '-A 101Ieth0:ifs -j LOG --log-prefix "eth0-ifs-18-deny " '
+                '--log-level warning -m limit --limit 60/minute '
+                '--limit-burst 10',
+                '-t filter -i eth0 -p all -m state --state NEW '
+                '-A 101Ieth0:ifs -j DROP',
+                '-t filter -o eth0 -p all -m state --state NEW '
+                '-A 101Oeth0:ifs -j ACCEPT',
+                '-t filter -i eth0 -p all -m state --state NEW '
+                '-A 101ieth0:ifs -j LOG --log-prefix "eth0-ifs-21-permit " '
+                '--log-level warning -m limit --limit 60/minute '
+                '--limit-burst 10',
+                '-t filter -i eth0 -p all -m state --state NEW '
+                '-A 101ieth0:ifs -j RETURN',
+                '-t filter -o eth0 -p all -m state --state NEW '
+                '-A 101oeth0:ifs -j ACCEPT'
             ],
         )
 
@@ -560,10 +620,12 @@ interface eth0:
         ips = google[0] + yahoo[0]
         for ip in ips:
             expected.append(
-                '''-t filter -o eth0 -p tcp -m state --state NEW -A 101Oeth0:ifs -j ACCEPT   --dst %s --dport 80''' % ip
+                '-t filter -o eth0 -p tcp -m state --state NEW '
+                '-A 101Oeth0:ifs -j ACCEPT   --dst %s --dport 80' % ip
             )
             expected.append(
-                '''-t filter -o eth0 -p tcp -m state --state NEW -A 101oeth0:ifs -j ACCEPT   --dst %s --dport 80''' % ip
+                '-t filter -o eth0 -p tcp -m state --state NEW '
+                '-A 101oeth0:ifs -j ACCEPT   --dst %s --dport 80' % ip
             )
         expected.sort()
         chains4_sorted = chains4["fwm-ifs"][:2*len(ips)]
@@ -572,19 +634,33 @@ interface eth0:
         self.assertEqual(
             chains4["fwm-ifs"][2*len(ips):],
             [
-                '-t filter -o eth0 -p all -m state --state NEW -A 101Oeth0:ifs -j ACCEPT',
-                '-t filter -i eth0 -p all -m state --state NEW -A 101Ieth0:ifs -j LOG --log-prefix "eth0-ifs-18-deny " --log-level warning -m limit --limit 60/minute --limit-burst 10',
-                '-t filter -i eth0 -p all -m state --state NEW -A 101Ieth0:ifs -j DROP',
-                '-t filter -i eth0 -p all -m state --state NEW -A 101ieth0:ifs -j LOG --log-prefix "eth0-ifs-20-deny " --log-level warning -m limit --limit 60/minute --limit-burst 10',
-                '-t filter -i eth0 -p all -m state --state NEW -A 101ieth0:ifs -j DROP',
-                '-t filter -o eth0 -p all -m state --state NEW -A 101oeth0:ifs -j LOG --log-prefix "eth0-ifs-21-deny " --log-level warning -m limit --limit 60/minute --limit-burst 10',
-                '-t filter -o eth0 -p all -m state --state NEW -A 101oeth0:ifs -j DROP',
-                '-t filter -i lo -p all -m state --state NEW -A 101Ilo:ifs -j ACCEPT',
-                '-t filter -o lo -p all -m state --state NEW -A 101Olo:ifs -j ACCEPT'
+                '-t filter -o eth0 -p all -m state --state NEW '
+                '-A 101Oeth0:ifs -j ACCEPT',
+                '-t filter -i eth0 -p all -m state --state NEW '
+                '-A 101Ieth0:ifs -j LOG --log-prefix "eth0-ifs-18-deny " '
+                '--log-level warning -m limit --limit 60/minute '
+                '--limit-burst 10',
+                '-t filter -i eth0 -p all -m state --state NEW '
+                '-A 101Ieth0:ifs -j DROP',
+                '-t filter -i eth0 -p all -m state --state NEW '
+                '-A 101ieth0:ifs -j LOG --log-prefix "eth0-ifs-20-deny " '
+                '--log-level warning -m limit --limit 60/minute '
+                '--limit-burst 10',
+                '-t filter -i eth0 -p all -m state --state NEW '
+                '-A 101ieth0:ifs -j DROP',
+                '-t filter -o eth0 -p all -m state --state NEW '
+                '-A 101oeth0:ifs -j LOG --log-prefix "eth0-ifs-21-deny " '
+                '--log-level warning -m limit --limit 60/minute '
+                '--limit-burst 10',
+                '-t filter -o eth0 -p all -m state --state NEW '
+                '-A 101oeth0:ifs -j DROP',
+                '-t filter -i lo -p all -m state --state NEW '
+                '-A 101Ilo:ifs -j ACCEPT',
+                '-t filter -o lo -p all -m state --state NEW '
+                '-A 101Olo:ifs -j ACCEPT'
             ],
         )
 
 
 if __name__ == '__main__':
     unittest.main()
-
