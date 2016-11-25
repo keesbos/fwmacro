@@ -38,8 +38,8 @@ if [ ! -d python ] ; then
     if ! getYesNo "Create python environment?" "Y" ; then
         exit 1
     fi
-    virtualenv python
+    virtualenv fwmpy
 fi
-. python/bin/activate
-easy_install plex
+. fwmpy/bin/activate
 easy_install netaddr
+easy_install netifaces

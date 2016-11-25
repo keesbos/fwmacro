@@ -622,13 +622,19 @@ redirect
         return options
 
     def get_icmp4options(self):
-        cmd = [self.iptables_cmd, '-p', 'icmp', '-h']
+        iptables_cmd = '/sbin/{0}'.format(self.iptables_cmd)
+        if not os.path.exists(iptables_cmd):
+            iptables_cmd = self.iptables_cmd
+        cmd = [iptables_cmd, '-p', 'icmp', '-h']
         self.icmp4_options = self.parse_icmp_options(
             cmd, self.default_icmp4options)
         return self.icmp4_options
 
     def get_icmp6options(self):
-        cmd = [self.ip6tables_cmd, '-p', 'icmpv6', '-h']
+        ip6tables_cmd = '/sbin/{0}'.format(self.ip6tables_cmd)
+        if not os.path.exists(ip6tables_cmd):
+            ip6tables_cmd = self.ip6tables_cmd
+        cmd = [ip6tables_cmd, '-p', 'icmpv6', '-h']
         self.icmp6_options = self.parse_icmp_options(
             cmd, self.default_icmp6options)
         return self.icmp6_options
@@ -707,6 +713,7 @@ class FWPreprocess(FWMacro):
         group.append(self.any_ipv6)
         self.groups["any"] = group
         self.force_groups = False
+        self.allow_mixed_ipv = True
         self.default_log_level = 'warning'
 
     def get_token(self, expect_text=False, expect_indent=None,
@@ -1113,7 +1120,7 @@ class FWPreprocess(FWMacro):
             token = self.get_token(True, indent, lineno)
         if states:
             if len(states) > 1 and "" in states:
-                FWSyntaxError("Cannot mix state NONE witrh other states")
+                FWSyntaxError("Cannot mix state NONE with other states")
             rule.state = ",".join(states)
 
         # PROTOCOL := "ip" | "all" | "tcp" | "udp" | "icmp" | number |
@@ -1460,10 +1467,12 @@ class FWPreprocess(FWMacro):
         if srcs_ip6 and not dsts_ip6:
             srcs_ip6 = self.purge_default(srcs_ip6)
         if (
-            (srcs_ip4 and not dsts_ip4) or
-            (dsts_ip4 and not srcs_ip4) or
-            (srcs_ip6 and not dsts_ip6) or
-            (dsts_ip6 and not srcs_ip6)
+            not self.allow_mixed_ipv and (
+                (srcs_ip4 and not dsts_ip4) or
+                (dsts_ip4 and not srcs_ip4) or
+                (srcs_ip6 and not dsts_ip6) or
+                (dsts_ip6 and not srcs_ip6)
+            )
         ):
             self.error((
                 "Cannot mix IPv4 and IPv6 source and "
@@ -1661,6 +1670,11 @@ class FWPreprocess(FWMacro):
             for rule in self.ifaces[iface]:
                 rule_ip4, rule_ip6 = self.make_rule(
                     chain_idx, chain, iface, rule)
+                if not rule_ip4 and not rule_ip6:
+                    self.warning((
+                        "Nothing to do for {} rule for IPv4 and IPv6 "
+                        "at line {}"
+                    ).format(rule.action, rule.lineno))
                 lines_ip4 += rule_ip4
                 lines_ip6 += rule_ip6
             if filename in chains4:
@@ -2061,7 +2075,7 @@ ICMPv6 options:
         sys.stderr.write("Too many arguments")
         sys.exit(1)
     fpp = FWPreprocess()
-    fpp.basedir = opts.basedir
+    fpp.basedir = os.path.abspath(opts.basedir)
     fpp.chainsdir_ipv4 = opts.chainsdir_ipv4
     fpp.chainsdir_ipv6 = opts.chainsdir_ipv6
     fpp.logtag = opts.logtag
@@ -2233,7 +2247,7 @@ usage: %prog [options] start | stop
             remove_all_chains=remove_all_chains,
             verbose=opts.verbose,
         )
-        fc.basedir = opts.basedir
+        fc.basedir = os.path.abspath(opts.basedir)
         fc.chainsdir = opts.chainsdir_ipv4
         chainsfiles = os.listdir(fc.chainsdir)
         try:
@@ -2246,7 +2260,7 @@ usage: %prog [options] start | stop
             remove_all_chains=remove_all_chains,
             verbose=opts.verbose,
         )
-        fc.basedir = opts.basedir
+        fc.basedir = os.path.abspath(opts.basedir)
         fc.chainsdir = opts.chainsdir_ipv6
         chainsfiles = os.listdir(fc.chainsdir)
         try:

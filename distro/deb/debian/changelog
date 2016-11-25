@@ -1,10 +1,12 @@
 python-fwmacro (0.9.6) unstable; urgency=low
 
-  * Sanitichecks based on netfaces
+  * Sanitychecks based on netifaces
 
   * Removed dependency on plex
 
   * Allow mixed ipv4/ipv6 rules to create ipv4 or ipv6 only chains
+
+ -- Kees Bos <k.bos@capitar.com>  Wed, 25 Nov 2016 06:34:00 +0100
 
 python-fwmacro (0.9.5) unstable; urgency=low
 

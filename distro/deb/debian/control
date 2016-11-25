@@ -7,7 +7,7 @@ Maintainer: Kees Bos <cornelis.bos@gmail.com>
 XS-Python-Version: 2.7
 
 Package: python-fwmacro
-Architecture: any
+Architecture: all
 Depends: python2.7, python-netaddr, python-netifaces
 Description: firewall macro rules preprocessor/compiler
  fwmacro is a library for generating iptables/ip6tables rules and to

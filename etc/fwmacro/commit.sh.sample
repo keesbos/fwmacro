@@ -1,14 +1,23 @@
 #!/bin/sh
 
+# MAILTO=
+MAILFROM="${USER}@$(hostname -f) <${USER}@$(hostname -f)>"
+SCRIPT=$0
+
 if [ ! -f fw.rules ] ; then
-	echo "Add fw.rules first" >&2
+	echo "Error: Add fw.rules first" >&2
 	exit 1
 fi
 
+if ! which git > /dev/null ; then
+	echo "Error: Git not installed" >&2
+	exit 1
+fi
+
+
 if [ ! -d .git ] ; then
 	cat <<EOD >.gitignore
-.compile
-.preprocess
+.install
 chains4/fwm-ifs
 chains6/fwm-ifs
 ipv4.rules
@@ -17,9 +26,64 @@ README
 EOD
 	git init
 	git add .gitignore
-	git add Makefile chains4 chains6 fw.rules ipv4stop.rules ipv6stop.rules *.sample
+	git add Makefile chains4 chains6 ipv4stop.rules ipv6stop.rules *.sample
 	if [ -f commit.sh ] ; then
 		git add commit.sh
 	fi
+	while [ -z "${NAME}" ] ; do read -p "Your name: " NAME ; done
+	while [ -z "${EMAIL}" ] ; do read -p "Your email: " EMAIL ; done
+	git config user.name "${NAME}"
+	git config user.email "${EMAIL}"
+	git commit -am "Initial commit"
+	git add fw.rules
 fi
-git commit -a
+
+CONFLICTS="`git status | grep conflicts`"
+if [ -n "${CONFLICTS}" ]; then
+	echo "Warning: There are conflicts" >&2
+	git status
+fi
+
+FILES="`git diff --name-only`"
+if [ "${FILES}" ] ; then
+	git diff ${FILES}
+	echo
+	REPLY=
+	while ! echo ${REPLY}|grep '^[yYnN]' >/dev/null ; do
+	       read -p "Continue (y/n)?" REPLY
+	done
+	if ! echo ${REPLY}|grep '^[yY]' >/dev/null ; then
+		echo "Exiting..."
+		exit 1
+	fi
+fi
+if [ -z "${FILES}" ] ; then
+	echo "Nothing to commit"
+fi
+
+while [ -z "${NAME}" ] ; do read -p "Your name: " NAME ; done
+while [ -z "${EMAIL}" ] ; do read -p "Your email: " EMAIL ; done
+while [ -z "${DESCR}" ] ; do read -p "Single line description: " DESCR ; done
+
+git config user.name "${NAME}"
+git config user.email "${EMAIL}"
+# COMMITMSG=/tmp/commit.msg.$$
+
+if [ -z "${COMMITMSG}" ] ; then
+	git commit -am "${DESCR}"
+else
+	git commit -aF "${COMMITMSG}" &> /dev/null
+	sleep 1
+	rm "${COMMITMSG}"
+fi
+
+if [ -n "${MAILTO}" ] ; then
+	(cat <<EOM; git log -n 1 ; git diff HEAD^) | /usr/sbin/sendmail -t
+From: ${MAILFROM}
+To: ${MAILTO}
+Subject: Firewall changes at $(uname -n) : ${DESCR}
+X-Script: ${SCRIPT}
+
+The following diff is produced with git for ${FILES}
+EOM
+fi

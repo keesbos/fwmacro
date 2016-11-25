@@ -1,42 +1,51 @@
 # Makefile for fwmacro
 
-REMOTE=cfgsync
+REMOTE=
+FWMPPOPTS=--force-groups
 
-all: .preprocess .compile
+all: ipv4.rules ipv6.rules
 
-.preprocess: fw.rules
-	fwmpp fw.rules
-	@touch .preprocess
+chains4/fwm-ifs chains6/fwm-ifs: fw.rules
+	fwmpp $(FWMPPOPTS) fw.rules
 
-.compile: chains4/* chains6/*
+ipv4.rules ipv6.rules: chains4/* chains6/*
 	fwmc
 # Optionally commit rules to subversion
 # or some other repository
 	@-if [ -f commit.sh ] ; then \
 		./commit.sh ;\
 	fi
-	@touch .compile
 
 stop:
 	fwmc stop
-	@-rm .compile
 
 update:
-#       To force preprocessing/compiling:
-#       touch fw.rules
-#       To retrieve config from subversion:
-#       svn update
-	@echo
-	@echo Pulling changes on `uname -n` from $(REMOTE)
-	@-git pull ssh://$(REMOTE)/etc/fwmacro master &> /dev/null
+#	To force preprocessing/compiling:
+#	touch fw.rules
+#	To retrieve config from subversion:
+#	svn update
+	@-if [ -z "$(REMOTE)" ] ;then \
+		echo "No synchronization: remote undefined" ;\
+	else \
+		echo Pulling changes on `uname -n` from $(REMOTE) ;\
+		git pull ssh://$(REMOTE)/etc/fwmacro master &> /dev/null ;\
+	fi
 
-install-ipv4: ipv4.rules
-	sudo iptables-restore ipv4.rules
+force-compile:
+	fwmpp $(FWMPPOPTS) fw.rules
+	fwmc
 
-install-ipv6: ipv6.rules
-	sudo ip6tables-restore ipv6.rules
+force-install:
+	@-sudo iptables-restore ipv4.rules
+	@-echo "Installed ipv4.rules"
+	@-sudo ip6tables-restore ipv6.rules
+	@-echo "Installed ipv6.rules"
 
-install: .preprocess .compile install-ipv4 install-ipv6
+.install: ipv4.rules ipv6.rules
+	@-make force-install
+	@-if [ -n "$(REMOTE)" ] ; then \
+		ssh -A $(REMOTE) "cd /etc/fwmacro;make update;make force-install" ;\
+	fi
+	@touch .install
 
-sync:
-	ssh -A $(REMOTE) "cd /etc/fwmacro;make update;make install"
+install: .install

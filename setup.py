@@ -6,7 +6,7 @@ from os import path
 here = path.abspath(path.dirname(__file__))
 
 # Get the long description from the README file
-with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
+with open(path.join(here, "README.rst"), encoding="utf-8") as f:
     long_description = f.read()
 
 setup(
@@ -16,7 +16,9 @@ setup(
     long_description=long_description,
     classifiers=[
         "Development Status :: 4 - Beta",
+        "Programming Language :: Python :: 2.6",
         "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3",
         "Environment :: Console",
         "Intended Audience :: Developers",
         "Intended Audience :: System Administrators",
@@ -47,9 +49,9 @@ setup(
         "netifaces",
     ],
     entry_points={
-        'console_scripts': [
-            'fwmpp=fwmacro:fwmpp',
-            'fwmc=fwmacro:fwmc',
+        "console_scripts": [
+            "fwmpp=fwmacro:fwmpp",
+            "fwmc=fwmacro:fwmc",
         ]
     },
     data_files=[
@@ -60,6 +62,7 @@ setup(
             "etc/fwmacro/fw.rules.sample",
             "etc/fwmacro/commit.sh.sample",
             "etc/fwmacro/fwmacro.init",
+            "etc/fwmacro/fwmacro.init.install.sh",
         ]),
         ("/etc/fwmacro/chains4", [
             "etc/fwmacro/chains4/default",
