@@ -10,9 +10,6 @@ docs/fwmpp.8
 docs/fwmpp.txt
 docs/fwmpp.xml
 
-etc/fwmacro/ipv4stop.rules
-etc/fwmacro/ipv6stop.rules
-
 distro/deb/debian/files
 distro/deb/debian/python-fwmacro.debhelper.log
 distro/deb/debian/python-fwmacro.substvars
